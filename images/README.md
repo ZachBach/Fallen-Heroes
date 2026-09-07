@@ -72,19 +72,11 @@ photographs came from has a hole in exactly the place it should be strongest.
 
 | file | subject | source | licence |
 | ---- | ------- | ------ | ------- |
-| `hero-maidan-flags.mp4` | The Field of Memory, Kyiv — hero, room 01 | Pexels video `18550804` | Pexels licence — free to use. **Contributor name still needed** |
+| `hero-maidan-flags.mp4` | The Field of Memory, Kyiv — hero, room 01 | [utopia 36 on Pexels](https://www.pexels.com/video/a-flag-and-flowers-are-placed-in-front-of-a-building-18550804/) | Pexels licence — free to use, credited on the page |
 | `hero-maidan-flags.jpg` | Poster frame for the above | derived from the same video | as above |
 | `memorial-statue-moy-de-vitry.jpg` | Motherland Monument, Kyiv — **not placed** | [Jonathan Ansel Moy de Vitry on Unsplash](https://unsplash.com/photos/VazH_1OSP9E) ([profile](https://unsplash.com/@jmdv)) | Unsplash Licence |
 
 Nothing is hotlinked. The Pexels and Unsplash CDNs never appear in a `src`.
-
-### Open: the video contributor
-
-Pexels asks for no attribution but deserves it, and the page currently says
-"contributor credit pending", which is a placeholder and should not ship that
-way for long. Pexels' page is behind a Cloudflare challenge so the name could
-not be read automatically — take it from the download page and put it in
-`HERO.credit` in `index.html`.
 
 ### Why the 4K master is not in this repo
 

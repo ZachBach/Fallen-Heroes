@@ -1011,7 +1011,14 @@ function MemorialLight({
        * the floor, and the upper one used to sit exactly on top of the lower.
        * Both are sunk, and the upper one is deep enough to be embedded in the
        * lower rather than balanced on it. */
-      const ALTAR_Z = FIELD_Z - 13.2;
+      /* Far enough back that the rack clears it. At 13.2 the dais front edge
+       * landed at z = -23.0 while the field reached -24.63, so the outermost
+       * ring and a half of candles stood INSIDE the step with only their
+       * flames above it. Note the altar is placed relative to FIELD_Z, so
+       * sliding the field would not have helped — the overlap was in the
+       * offset. Field radius 11.63 + half the 6.4 dais depth needs 14.83
+       * minimum; 16.0 leaves a metre of stone between the two. */
+      const ALTAR_Z = FIELD_Z - 16.0;
       addBox(17, 0.34 + SINK, 6.4, 0, 0.17 - SINK / 2, ALTAR_Z);
       addBox(12.5, 0.48, 4.4, 0, 0.44, ALTAR_Z + 0.5);
 

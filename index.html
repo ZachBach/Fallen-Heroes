@@ -42,7 +42,7 @@ a{color:#C9A227;text-decoration:none}a:hover{color:#e0bb45}
 
   <section data-screen-label="01 Hero" style="display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.1)">
     <div style="position:relative;height:62vh;min-height:380px;overflow:hidden">
-      <image-slot id="memorial-hero" shape="rect" fit="cover" placeholder="Drop the hero photograph here — Ukrainian soldiers, men and women"></image-slot>
+      <image-slot id="memorial-hero" shape="rect" fit="cover" placeholder="Hero photograph — set HERO.src in the script below"></image-slot>
       <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,14,16,.5) 0%,rgba(13,14,16,0) 30%,rgba(13,14,16,.28) 72%,#0d0e10 100%)"></div>
     </div>
     <div style="padding:52px 6vw 84px;display:flex;flex-direction:column;gap:30px">
@@ -212,7 +212,7 @@ a{color:#C9A227;text-decoration:none}a:hover{color:#e0bb45}
 
   <footer style="padding:52px 6vw 76px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-wrap:wrap;gap:20px 46px;align-items:baseline">
     <span style="font:400 17px/1 'Cormorant Garamond',serif">Вічна пам'ять</span>
-    <span style="font:400 11px/1.9 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8a8478;max-width:60ch;text-wrap:pretty">No photograph in this gallery is generated. Portraits, names, and objects are supplied by families, units, and communities, and are withdrawn on request. The Hall of light is a rendered room and is labelled as such.</span>
+    <span style="font:400 11px/1.9 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8a8478;max-width:60ch;text-wrap:pretty">No photograph in this gallery is generated. Portraits, names, and objects are supplied by families, units, and communities, and are withdrawn on request. The Hall of light is a rendered room and is labelled as such. The photograph at the head of this page is licensed stock, credited on the image — it is not a submission, and the people in it are not the people named here.</span>
     <div style="flex:1"></div>
     <span style="font:500 10px/1.9 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(244,242,238,.34)">Slava Ukraini · Героям слава</span>
   </footer>
@@ -227,10 +227,44 @@ const PLATES = 24;
 // spent on 500 wicks instead of spread thin across thousands.
 const ROOM_SIZE = 500;
 const INDEX = 'А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ю Я'.split(' ');
+/* ---------------------------------------------------------------- IMAGES
+ * Every photograph on this page is committed to images/ and referenced by
+ * path. Dropping a file onto the live site does NOT work: image-slot.js gates
+ * editing on window.omelette.writeFile, which only exists inside the design
+ * tool, so on GitHub Pages every slot is read-only.
+ *
+ * To hang a photograph: put the file in images/, then fill in `src` below.
+ * `credit` and `creditHref` are for licences that require attribution — and
+ * they are not optional for Unsplash, where image-slot renders an error tile
+ * instead of the photo if the credit is missing.
+ *
+ * src MUST be a local path. Anything cross-origin breaks the page's
+ * no-external-request guarantee and verify.mjs will fail the build. */
+const HERO = {
+  src: './images/hero-defenders-vony-razom.jpg',
+  // image-slot renders this as Unsplash prescribes — the photographer's name
+  // linked to their profile, "Unsplash" linked to the homepage, both carrying
+  // the required utm referral params. Keep the exact wording; the component
+  // pattern-matches it.
+  credit: 'Photo by Vony Razom on Unsplash',
+  creditHref: 'https://unsplash.com/@vonyrazom',
+};
 const OBJECTS = [
-  { slotId: 'obj-1', placeholder: 'Object photograph — flat field, true scale', title: 'Field notebook', meta: 'Accession pending · conservation note on request' },
-  { slotId: 'obj-2', placeholder: 'Object photograph — flat field, true scale', title: 'Unit patch', meta: 'Accession pending · returned to family on request' },
-  { slotId: 'obj-3', placeholder: 'Object photograph — flat field, true scale', title: 'Letter home', meta: 'Accession pending · displayed only with consent' },
+  { slotId: 'obj-1', src: null, credit: null, creditHref: null, placeholder: 'Object photograph — flat field, true scale', title: 'Field notebook', meta: 'Accession pending · conservation note on request' },
+  { slotId: 'obj-2', src: null, credit: null, creditHref: null, placeholder: 'Object photograph — flat field, true scale', title: 'Unit patch', meta: 'Accession pending · returned to family on request' },
+  { slotId: 'obj-3', src: null, credit: null, creditHref: null, placeholder: 'Object photograph — flat field, true scale', title: 'Letter home', meta: 'Accession pending · displayed only with consent' },
+];
+/* Portraits, in frame order. A family's photograph goes in images/ and its
+ * path goes here, alongside the name and the line the family approved. */
+const PORTRAITS = [
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
+  { src: null, credit: null, creditHref: null, name: '—', meta: 'Name · unit · dates — awaiting family submission' },
 ];
 const STEPS = [
   { n: '01', title: 'Write to the curator', detail: 'zachauerbachdev@gmail.com, or +1 213 646 1877. One message, to a person.' },
@@ -245,7 +279,36 @@ class Component extends DCLogic {
   // light a candle.
   state = { lit: 0, room: 0, ready: false, backend: null };
 
+  /* Photographs are attached to the slots HERE, not in the markup above.
+   *
+   * A `{{ }}` expression inside a src attribute does not survive the raw
+   * template: the browser parses <x-dc> as ordinary HTML before the runtime
+   * ever gets to it, so `src="{{ frame.src }}"` is briefly a real URL and gets
+   * fetched as the literal path "/{{ frame.src }}". Three 404s on every page
+   * load, on a page whose whole claim is that it makes no stray requests.
+   *
+   * image-slot observes src, credit and credit-href, so setting them on the
+   * live elements after render reaches exactly the same code path with none of
+   * that. Slots with no photograph are left untouched and keep their
+   * empty-frame state, which is a deliberate part of the exhibition. */
+  applyPhotographs() {
+    const set = (id, p) => {
+      if (!p || !p.src) return;
+      const el = document.getElementById(id);
+      if (!el || el.getAttribute('src') === p.src) return;
+      el.setAttribute('src', p.src);
+      if (p.credit) el.setAttribute('credit', p.credit);
+      if (p.creditHref) el.setAttribute('credit-href', p.creditHref);
+    };
+    set('memorial-hero', HERO);
+    PORTRAITS.forEach((p, i) => set('portrait-' + (i + 1), p));
+    OBJECTS.forEach((o) => set(o.slotId, o));
+  }
+
+  componentDidUpdate() { this.applyPhotographs(); }
+
   componentDidMount() {
+    this.applyPhotographs();
     let lit = 0;
     try {
       const stored = window.localStorage.getItem('memorial.candles.lit');
@@ -265,12 +328,15 @@ class Component extends DCLogic {
     const litInRoom = Math.max(0, Math.min(ROOM_SIZE, lit - room * ROOM_SIZE));
     const viewingFull = litInRoom >= ROOM_SIZE;
 
-    const frames = Array.from({ length: PORTRAIT_FRAMES }, (_, i) => ({
-      slotId: 'portrait-' + (i + 1),
-      placeholder: 'Portrait ' + String(i + 1).padStart(2, '0') + ' — supplied by family',
-      nameLine: '—',
-      metaLine: 'Name · unit · dates — awaiting family submission',
-    }));
+    const frames = Array.from({ length: PORTRAIT_FRAMES }, (_, i) => {
+      const p = PORTRAITS[i] || {};
+      return {
+        slotId: 'portrait-' + (i + 1),
+        placeholder: 'Portrait ' + String(i + 1).padStart(2, '0') + ' — supplied by family',
+        nameLine: p.name || '—',
+        metaLine: p.meta || 'Name · unit · dates — awaiting family submission',
+      };
+    });
 
     const plates = Array.from({ length: PLATES }, (_, i) => ({
       ref: 'IV·' + String(i + 1).padStart(3, '0'),

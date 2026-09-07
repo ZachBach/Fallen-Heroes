@@ -1468,26 +1468,47 @@ function MemorialLight({
       {
         const u = uv();
         const across = oneMinus(clamp(u.x.sub(0.5).abs().mul(2.15), float(0), float(1)));
-        const down = smoothstep(float(0.0), float(0.30), u.y)
-          .mul(oneMinus(smoothstep(float(0.45), float(1.0), u.y)));
+        const down = smoothstep(float(0.0), float(0.09), u.y)
+          .mul(oneMinus(smoothstep(float(0.16), float(0.96), u.y)));
         // Dust turning in the beam, so it does not read as a flat card.
         const motes = mx_noise_float(vec3(u.x.mul(6.0), u.y.mul(2.6).sub(uTime.mul(0.06)), float(3.0)))
           .mul(0.5).add(0.72);
         const sun = vec3(1.00, 0.86, 0.62);
         const moon = vec3(0.52, 0.64, 1.00);
         const tint = mix(moon, sun, uDay);
-        const strength = mix(float(0.030), float(0.115), uDay);
+        const strength = mix(float(0.020), float(0.075), uDay);
         shaftMat.colorNode = vec4(tint, across.mul(down).mul(motes).mul(strength));
       }
-      const shaftGeo = new THREE.PlaneGeometry(7.0, 30);
+      /* Each beam runs FROM its window TO a patch of floor, and is built from
+       * that pair of points rather than positioned by eye.
+       *
+       * The previous version placed the card at `w.x * 0.50` — half the
+       * distance to the wall — as a 30-unit plane centred near the vault. It
+       * never touched a window, which is exactly why the light read as falling
+       * out of the roof.
+       *
+       * Two crossed planes per beam, not one. A single quad vanishes when the
+       * camera lines up with its edge, and the orbit goes all the way round,
+       * so at two points in every turn the light would simply switch off. */
+      const shaftGeo = new THREE.PlaneGeometry(6.4, 1);   // unit length; scaled per beam
+      const UP = new THREE.Vector3(0, 1, 0);
       for (const w of windows) {
-        const s = new THREE.Mesh(shaftGeo, shaftMat);
-        // Leaned inward and along the nave, so the beams land on the floor
-        // around the candles instead of hanging flat against the wall.
-        s.position.set(w.x * 0.50, WIN_Y - 4.2, w.z + 1.4);
-        s.rotation.set(0.30 * w.side, w.side * Math.PI / 2 * 0.62, w.side * 0.34);
-        s.renderOrder = 0;
-        church.add(s);
+        const from = new THREE.Vector3(w.x, WIN_Y + 3.0, w.z);
+        // Lands inboard and a little down-nave, so the beams rake across the
+        // floor around the rack instead of dropping straight down the wall.
+        const to = new THREE.Vector3(w.side * 5.5, 0, w.z + 10.0);
+        const dir = new THREE.Vector3().subVectors(to, from);
+        const len = dir.length();
+        dir.normalize();
+        for (const roll of [0, Math.PI / 2]) {
+          const s = new THREE.Mesh(shaftGeo, shaftMat);
+          s.quaternion.setFromUnitVectors(UP, dir);
+          s.rotateY(roll);                       // local Y is now the beam axis
+          s.position.copy(from).addScaledVector(dir, len / 2);
+          s.scale.set(1, len, 1);
+          s.renderOrder = 0;
+          church.add(s);
+        }
       }
 
       /* ------------------------------------------------------------ loop */

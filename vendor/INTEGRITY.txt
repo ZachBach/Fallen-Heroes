@@ -52,6 +52,33 @@ sha384, base64 — each verified byte-identical against unpkg on 2026-09-06:
     Not minified upstream — three ships examples/jsm as source only. Imports
     the bare specifier 'three', so it resolves through the same import map.
 
+Three more addons, verified byte-identical against unpkg on 2026-09-07. These
+keep three's own directory layout under three-addons/ rather than being
+flattened next to the files above, because GLTFLoader imports its two
+companions by relative path — laying them out flat would mean editing those
+two import lines, and an edited file cannot be checked against a published
+hash. Nesting costs two directories and keeps the record exact.
+
+  three-addons/loaders/GLTFLoader.js
+                       3CnKaFWE2emo2DOUQi/yFm4SMemUgSZ9IAJe/V2pyJTw9KXWYSmR0MiX/7RoPyiJ
+    upstream: examples/jsm/loaders/GLTFLoader.js       (114959 bytes)
+  three-addons/utils/BufferGeometryUtils.js
+                       7hDmXj1Pzh+247/oGQWqojXH2XGbc0fOGrcNmbi5ly2QK0IC1ouPa/niSKBka6nl
+    upstream: examples/jsm/utils/BufferGeometryUtils.js  (35539 bytes)
+  three-addons/utils/SkeletonUtils.js
+                       Pozn8j5+YFr3ak8Pm90ayqDrGYn/DV7vVs/YIIqzJhzeJT0LQksoS1fZQ5lfsYlw
+    upstream: examples/jsm/utils/SkeletonUtils.js      (11535 bytes)
+
+Only BufferGeometryUtils is loaded on an ordinary visit, and only for
+mergeGeometries, which collapses each carved figure from forty-odd pieces
+into one draw call. GLTFLoader is imported dynamically and ONLY when an entry
+in the SCULPTURES table names a model file — see models/README.md. With the
+table empty, as it ships, neither it nor SkeletonUtils is ever fetched.
+
+Note for anyone adding a compressed model: Draco and Meshopt decoders are NOT
+vendored here. glTF asks for them over the network, which would break the
+whole point of this directory. Export uncompressed.
+
 Line endings: .gitattributes marks vendor/** as `-text`, so git performs no
 CRLF conversion in either direction. Without that, a clone on Windows would
 rewrite the text files here and every hash above would stop matching — the

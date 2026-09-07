@@ -22,6 +22,8 @@ node verify.mjs                # headless gate, both GPU backends
 | `support.js`        | dc-runtime (generated — do not edit)                         |
 | `image-slot.js`     | `<image-slot>` custom element (starter copy — do not edit)   |
 | `vendor/`           | three.js, React, OrbitControls, fonts — see `INTEGRITY.txt`  |
+| `images/`           | every photograph, committed — see `images/README.md`         |
+| `models/`           | drop-in `.glb` sculpture — see `models/README.md`            |
 | `verify.mjs`        | headless gate, both backends                                 |
 | `.nojekyll`         | stops GitHub Pages running the page through Jekyll           |
 | `LICENSE`           | Apache License 2.0 — covers the software                     |
@@ -87,6 +89,57 @@ at size and once fractionally larger, so the difference between the two masks
 becomes a lead outline. Figurative glass is always drawn with the figure cames
 heavier than the field cames; without that, gold on blue dissolves into the
 diaper behind it.
+
+### The statues
+
+Michael stands at the crossing with a **wolf** and a **dragon** flanking him —
+the Cossack-*characternyk* who could turn into a wolf and catch arrows, and the
+dragon that rocket artillery units wear. Both are folklore old enough to belong
+to nobody, which is the whole test applied here: no unit insignia is
+reproduced, only the creatures behind them.
+
+They are carved in code. The tool that does the work is **`loft`** — a
+cross-section that changes as it is carried along a spine. A lathe can only
+make a body of revolution, which gives you a candle, a column and a traffic
+cone where you wanted a figure; everything alive is a loft. The robe, every
+arm, every wing bone, every single feather, the wolf from rump to nose and the
+dragon in one unbroken sweep from tail tip to nape all come out of that one
+function. It also takes an `arc`, which sweeps part of a turn instead of all of
+it and so produces open shells — the mantle over Michael's shoulders, the hair
+round the back of his head.
+
+Four things were only findable by rendering and looking:
+
+- **The wings.** Two slabs at an angle read from the floor of the nave as a
+  windmill. A single fan of separated feathers read as a rake. Three
+  overlapping rows of properly shaped feathers read as *black threads*, and
+  that one was not a shape problem at all — each feather was being rotated
+  individually from world axes, so its flat face ended up edge-on to the
+  viewer, and a surface presented edge-on has nothing to catch light with. A
+  wing is a **surface**: it is now authored flat in its own plane and the
+  finished wing swept back as one piece.
+- **A brow ridge renders as sunglasses.** Anything spanning the eyes catches a
+  shadow across both of them. Carvers get away with it because they have a real
+  light and a real undercut. The face is left smooth, which is what weathered
+  stone looks like at this distance anyway.
+- **Down-facing surfaces on the silhouette go black.** Nothing here casts or
+  receives a real shadow, so the underside of the robe's flared hem drew a hard
+  black outline round the whole figure. Two fixes, both physical: the hem tucks
+  under itself so its cap is inside the robe, and the stone picks up a little
+  gold from below — it *is* standing over a hundred flames.
+- **Too much light is indistinguishable from no detail.** At the original spot
+  intensity the figures blew past the tone-mapping knee and went flat white.
+  Every bit of surface was being clipped away by the light rather than missing
+  from the model.
+
+Each figure merges to **one draw call** (`mergeGeometries`), so forty-odd pieces
+cost what one costs.
+
+**Replacing them with real sculpture** — Blender, a CAD export, a scan — is a
+two-line change: put a `.glb` in `models/` and fill in its entry in the
+`SCULPTURES` table. The loader rescales, centres and stands it on the plinth,
+and repaints it in the church's stone. See [`models/README.md`](models/README.md).
+The table ships empty, and an empty entry fetches nothing.
 
 ### Day and night
 

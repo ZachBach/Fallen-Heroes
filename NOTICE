@@ -87,7 +87,9 @@ THIRD-PARTY COMPONENTS
 Files under vendor/ are third-party and carry their own licences, which
 ship beside them:
 
-  three.js, OrbitControls  MIT   (c) 2010-2026 three.js authors
+  three.js, OrbitControls,
+  GLTFLoader, BufferGeometryUtils,
+  SkeletonUtils             MIT   (c) 2010-2026 three.js authors
   React, ReactDOM          MIT   (c) Meta Platforms, Inc. and affiliates
   Cormorant Garamond       SIL Open Font License 1.1
                                  vendor/fonts/OFL-Cormorant.txt

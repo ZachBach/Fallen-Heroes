@@ -1511,158 +1511,802 @@ function MemorialLight({
         }
       }
 
-      /* ========================================================= STATUES */
+      /* ======================================================= SCULPTURE */
       /* Michael at the crossing, a wolf and a dragon flanking him.
        *
-       * These are real solids, not the flat silhouettes the shields use. The
-       * orbit goes all the way round, and a cutout standing in the middle of
-       * the nave reads as painted cardboard the instant you pass it. So: a
-       * robe is a profile of revolution — the same lathe trick as the candle
-       * wax — with head, wings, sword and beast built from solids on top.
+       * The orbit goes all the way round, so these have to be solids. A flat
+       * silhouette standing in the middle of a nave reads as painted
+       * cardboard the instant you walk past it.
        *
-       * The beasts are deliberately blocky. Quadrupeds do not lathe, and
-       * carved stone animals on a plinth ARE blocky; the stylisation is what
-       * the material would give you anyway. */
-      const statueMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.74, metalness: 0.0 });
+       * The first pass built them from boxes and spheres. That is honest for
+       * a plinth and dishonest for a body: nothing alive has a constant
+       * cross-section, and an assembly of primitives reads as an assembly of
+       * primitives however carefully it is arranged. What replaced it is one
+       * tool — a loft, a varying cross-section carried along a spine — used
+       * for the robe, the arms, the wing bones, every feather, the wolf from
+       * rump to nose and the dragon from tail tip to jaw. That single change
+       * is most of the difference between a diagram of a figure and a figure.
+       *
+       * They are still carvings, not photographs of people. A memorial statue
+       * IS stone: tooled, simplified, weathered. The aim is that the
+       * simplification looks chosen rather than forced. */
+
+      /* ---- a door for real models --------------------------------------
+       * If a sculpted model turns up — Blender, Fusion, a photogrammetry
+       * scan, a CAD export — fill in its entry here and it replaces the
+       * figure carved below. See models/README.md for the contract.
+       *
+       * Null means "use the one carved here" AND FETCHES NOTHING. That is
+       * why the default is null rather than a hopeful path: a path that 404s
+       * is a console error on every load and this page gates on having none.
+       *
+       *   michael: { src: './models/michael.glb', height: 5.9,
+       *              turn: 0, material: 'stone' }
+       */
+      const SCULPTURES = { michael: null, wolf: null, dragon: null };
+
+      /* Merging is what keeps the part count from becoming the draw count.
+       * A figure is forty-odd pieces; merged, it is one. Optional — if the
+       * util fails to load the pieces are simply added individually, which
+       * costs draw calls and looks identical. */
+      let mergeGeometries = null;
+      try {
+        ({ mergeGeometries } =
+          await import('./vendor/three-addons/utils/BufferGeometryUtils.js'));
+      } catch (err) {
+        console.warn('[MemorialLight] BufferGeometryUtils unavailable', err);
+      }
+
+      /* ---- the stone --------------------------------------------------- */
+      /* Pale limestone, warmer than the walls so the figures lift off them,
+       * and weathered the way stone standing in a room actually weathers:
+       * dust settles on every upward face, grime collects under every
+       * overhang, and rain-streaks run vertically whatever the grain does.
+       * Those three cues do more for "this is carved stone" than any amount
+       * of extra geometry. */
+      const statueMat = new THREE.MeshStandardNodeMaterial({
+        roughness: 0.74, metalness: 0.0, side: THREE.DoubleSide,
+      });
       {
         const p = positionWorld;
-        const grain = mx_noise_float(p.mul(2.6)).mul(0.5).add(0.5);
-        const fine = mx_noise_float(p.mul(14.0)).mul(0.5).add(0.5);
-        // Pale limestone, warmer than the walls so the figures lift off them.
-        const base = mix(vec3(0.200, 0.190, 0.170), vec3(0.278, 0.265, 0.238), grain);
+        /* Four scales, because that is what stone has and a single noise
+         * cannot fake. Patches are where the block weathered differently;
+         * grain is the bedding; tooth is the chisel; streaks are what runs
+         * down it. Without the coarse term the figure is one flat tone and
+         * reads as soap however good the geometry under it is. */
+        const patch = mx_fractal_noise_float(p.mul(0.42), 3, 2.0, 0.55, 1.0).mul(0.5).add(0.5);
+        const grain = mx_noise_float(p.mul(3.4)).mul(0.5).add(0.5);
+        const tooth = mx_fractal_noise_float(p.mul(19.0), 3, 2.0, 0.5, 1.0).mul(0.5).add(0.5);
+        // Squashed on Y, so it runs in vertical streaks — weathering follows
+        // gravity, not the bedding planes.
+        const streak = mx_fractal_noise_float(
+          vec3(p.x.mul(11.0), p.y.mul(0.45), p.z.mul(11.0)), 2, 2.0, 0.5, 1.0,
+        ).mul(0.5).add(0.5);
+        const up = normalWorld.y;
+        const dust = smoothstep(float(0.30), float(0.95), up);
+        // Only faces that point properly DOWN go dark. Ramping from -0.05
+         // caught the underside of the robe's flared hem, which is on the
+         // silhouette, and drew a black outline round the bottom of the figure.
+        const grime = smoothstep(float(-0.30), float(-0.90), up);
+
+        const base = mix(vec3(0.168, 0.158, 0.140), vec3(0.262, 0.249, 0.222), grain)
+          .mul(patch.mul(0.34).add(0.80));
         // Candlelight reaches the lower half and dies out going up, which is
         // what actually happens to anything standing over a rack of candles.
         const fromBelow = oneMinus(smoothstep(float(0.4), float(6.0), p.y)).mul(0.7);
-        statueMat.colorNode = base.add(fine.sub(0.5).mul(0.03))
+        statueMat.colorNode = base
+          .add(tooth.sub(0.5).mul(0.055))
+          .mul(oneMinus(smoothstep(float(0.55), float(1.0), streak).mul(0.30)))
+          .mul(oneMinus(grime.mul(0.30)))                  // dark under overhangs
+          .add(vec3(0.028, 0.027, 0.024).mul(dust))        // dust on the tops
           .add(goldVec().mul(fromBelow.mul(0.30)))
           .mul(uDay.mul(0.34).add(0.72));
-        statueMat.roughnessNode = clamp(fine.mul(0.22).add(0.68), float(0.3), float(1));
-        statueMat.emissiveNode = goldVec().mul(fromBelow.mul(0.05));
+        statueMat.roughnessNode =
+          clamp(tooth.mul(0.26).add(dust.mul(0.10)).add(0.64), float(0.3), float(1));
+        /* Standing over a hundred flames, the undersides of these figures are
+         * not black. Nothing here casts or receives a real shadow, so the
+         * bounce has to be asserted; without it every downward face — the
+         * flare of the hem most of all, because it is on the silhouette —
+         * goes to nothing and draws a hard black line round the figure. */
+        statueMat.emissiveNode = goldVec().mul(fromBelow.mul(0.10));
       }
 
+      /* ---- the toolkit -------------------------------------------------
+       *
+       * LOFT is the whole trick. A lathe can only make a body of revolution:
+       * a candle, a column, a bell, and a traffic cone where you wanted a
+       * figure. Everything alive is a cross-section that changes as it is
+       * carried along a curve — a wolf's back, a dragon's neck, a forearm, a
+       * single feather. One function covers all of them.
+       *
+       * Frames come from parallel transport: each section's frame is the
+       * previous one rotated by whatever carries the previous tangent onto
+       * this one. Deriving the frame from a fixed world-up instead flips it
+       * wherever the spine passes through vertical, and that flip shows up as
+       * a 180-degree twist in the middle of a neck.
+       *
+       * `seed` names the direction rx points at the FIRST section, so a
+       * caller can say "rx is the width across the shoulders" and mean it. */
+      const loft = (spine, opt = {}) => {
+        const radial = opt.radial || 14;
+        const n = spine.length;
+        const P = spine.map((s) => new THREE.Vector3(s.p[0], s.p[1], s.p[2]));
+        const T = P.map((_, i) => new THREE.Vector3()
+          .subVectors(P[Math.min(n - 1, i + 1)], P[Math.max(0, i - 1)])
+          .normalize());
+
+        const ref = new THREE.Vector3(...(opt.seed || [1, 0, 0])).normalize();
+        if (Math.abs(ref.dot(T[0])) > 0.98) {
+          ref.set(0, 1, 0);
+          if (Math.abs(ref.dot(T[0])) > 0.98) ref.set(0, 0, 1);
+        }
+        const nrm = ref.clone().addScaledVector(T[0], -ref.dot(T[0])).normalize();
+        const q = new THREE.Quaternion();
+        const N = [], B = [];
+        for (let i = 0; i < n; i++) {
+          if (i > 0) nrm.applyQuaternion(q.setFromUnitVectors(T[i - 1], T[i]));
+          nrm.addScaledVector(T[i], -nrm.dot(T[i])).normalize();
+          N.push(nrm.clone());
+          B.push(new THREE.Vector3().crossVectors(T[i], nrm).normalize());
+        }
+
+        /* `arc` sweeps part of a turn instead of all of it, which makes the
+         * same function produce open shells — a mantle over the shoulders,
+         * a cowl — as well as closed solids. An open sweep needs both edge
+         * columns, so it carries one more than it has faces, and it takes no
+         * end caps: a shell has no ends to cap. */
+        const arc = opt.arc || null;
+        const cols = arc ? radial + 1 : radial;
+        const pos = [], uvs = [], idx = [];
+        for (let i = 0; i < n; i++) {
+          const s = spine[i];
+          const rx = s.rx, ry = s.ry === undefined ? s.rx : s.ry;
+          for (let j = 0; j < cols; j++) {
+            const f = j / radial;
+            const a = arc ? arc[0] + (arc[1] - arc[0]) * f : f * Math.PI * 2;
+            // Per-angle shape, so a section can be keeled, creased or folded
+            // rather than a plain ellipse.
+            const k = s.shape ? s.shape(a, i / (n - 1)) : 1;
+            const v = P[i].clone()
+              .addScaledVector(N[i], Math.cos(a) * rx * k)
+              .addScaledVector(B[i], Math.sin(a) * ry * k);
+            pos.push(v.x, v.y, v.z);
+            uvs.push(f, i / (n - 1));
+          }
+        }
+        // Closed rings wrap on a shared vertex rather than a duplicated seam:
+        // the uv is wrong for one column and the shading is right all the way
+        // round, and nothing here samples uv.
+        for (let i = 0; i < n - 1; i++) {
+          for (let j = 0; j < radial; j++) {
+            const a = i * cols + j;
+            const b = i * cols + (arc ? j + 1 : (j + 1) % radial);
+            idx.push(a, b, a + cols, b, b + cols, a + cols);
+          }
+        }
+        const cap = (i, flip) => {
+          const c = pos.length / 3;
+          pos.push(P[i].x, P[i].y, P[i].z);
+          uvs.push(0.5, flip ? 0 : 1);
+          for (let j = 0; j < radial; j++) {
+            const a = i * cols + j, b = i * cols + (j + 1) % radial;
+            if (flip) idx.push(c, b, a); else idx.push(c, a, b);
+          }
+        };
+        if (!arc && opt.capA !== false) cap(0, true);
+        if (!arc && opt.capB !== false) cap(n - 1, false);
+
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        g.setIndex(idx);
+        g.computeVertexNormals();
+        return g;
+      };
+
+      /* A membrane stretched between two ribs and sagging between them —
+       * a dragon's wing, and nothing else here. Zero thickness, which is why
+       * the stone is DoubleSide: a stone wing membrane is carved thin, and
+       * giving it a back face costs less than giving it volume. */
+      const membrane = (ribA, ribB, sag, nu = 7, nv = 4) => {
+        const pos = [], uvs = [], idx = [];
+        for (let i = 0; i < nu; i++) {
+          const u = i / (nu - 1);
+          const a = ribA(u), b = ribB(u);
+          for (let j = 0; j < nv; j++) {
+            const v = j / (nv - 1);
+            const p = a.clone().lerp(b, v);
+            p.y -= sag * 4 * v * (1 - v) * u;   // slack, none at the root
+            pos.push(p.x, p.y, p.z);
+            uvs.push(u, v);
+          }
+        }
+        for (let i = 0; i < nu - 1; i++) {
+          for (let j = 0; j < nv - 1; j++) {
+            const a = i * nv + j;
+            idx.push(a, a + 1, a + nv, a + 1, a + nv + 1, a + nv);
+          }
+        }
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        g.setIndex(idx);
+        g.computeVertexNormals();
+        return g;
+      };
+
+      /* One feather, lying along +X from its quill, LYING FLAT IN THE XY
+       * PLANE: wide in Y, thin in Z. That is not arbitrary. A wing is a
+       * surface, so every feather in it has to be built in the surface's own
+       * plane and the whole wing rotated into place afterwards. Building the
+       * feather in world axes and rotating each one individually is what put
+       * the first version's plumage edge-on to the nave, where twenty-six
+       * carefully shaped feathers rendered as twenty-six black threads.
+       *
+       * The section is lenticular and widens out of the quill, holds, then
+       * draws to a point, and `sweep` curves it along its length — which is
+       * the difference between a feather and a lolly stick. */
+      const feather = (len, wid, thick, sweep) => {
+        const S = 9, spine = [];
+        for (let i = 0; i < S; i++) {
+          const u = i / (S - 1);
+          // 0.88 rather than a full half-turn: the vane still closes but the
+          // tip stays blunt. Running it to 0.96 sharpened every feather to a
+          // spike and turned the trailing edge of the wing into a saw.
+          const w = wid * Math.sin(Math.pow(u, 0.45) * Math.PI * 0.88);
+          spine.push({
+            p: [u * len, sweep * u * u, 0],
+            rx: Math.max(0.008, thick * (1 - u * 0.55)),   // thickness, in Z
+            ry: Math.max(0.012, w),                        // half-width, in Y
+          });
+        }
+        return loft(spine, { radial: 8, seed: [0, 0, 1] });
+      };
+
+      /* ---- assembling a figure ----------------------------------------- */
       const statues = new THREE.Group();
       church.add(statues);
+
+      let QUEUE = null;
+      /* An optional frame stacked on top of every placement, so a subassembly
+       * can be authored in its own convenient axes and set into the figure
+       * afterwards. The wings need it: they are built flat in XY and swept
+       * back as a unit. Rotations only — a mirror would flip the winding and
+       * turn one wing inside out. */
+      let XF = null;
+      const inFrame = (mat, fn) => {
+        const prev = XF;
+        XF = prev ? prev.clone().multiply(mat) : mat;
+        fn();
+        XF = prev;
+      };
+      const _o = new THREE.Object3D();
+      const push = (geo) => {
+        _o.updateMatrix();
+        QUEUE.push(geo.clone().applyMatrix4(
+          XF ? XF.clone().multiply(_o.matrix) : _o.matrix));
+      };
       const part = (geo, x, y, z, rot, scl) => {
-        const m = new THREE.Mesh(geo, statueMat);
-        m.position.set(x, y, z);
-        if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
-        if (scl) m.scale.set(scl[0], scl[1], scl[2]);
-        statues.add(m);
-        return m;
+        _o.position.set(x || 0, y || 0, z || 0);
+        _o.rotation.set(rot ? rot[0] : 0, rot ? rot[1] : 0, rot ? rot[2] : 0);
+        _o.scale.set(scl ? scl[0] : 1, scl ? scl[1] : 1, scl ? scl[2] : 1);
+        push(geo);
+      };
+      // Place a geometry built along +X so that its +X runs along `dir`. With
+      // `dir` in the XY plane the rotation is about Z alone, which is what
+      // keeps a feather's flat face flat.
+      const along = (geo, at, dir, roll) => {
+        const d = new THREE.Vector3(dir[0], dir[1], dir[2] || 0).normalize();
+        _o.position.set(at[0], at[1], at[2]);
+        _o.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), d);
+        _o.scale.set(1, 1, 1);
+        if (roll) _o.rotateX(roll);
+        push(geo);
       };
       const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
-      const ball = (r) => new THREE.SphereGeometry(r, 18, 12);
+      const ball = (r) => new THREE.SphereGeometry(r, 16, 12);
+      const carve = (fn) => {
+        QUEUE = [];
+        fn();
+        const parts = QUEUE; QUEUE = null;
+        let mesh;
+        if (mergeGeometries) {
+          const merged = mergeGeometries(parts, false);
+          for (const g of parts) g.dispose();
+          mesh = new THREE.Mesh(merged, statueMat);
+        } else {
+          mesh = new THREE.Group();
+          for (const g of parts) mesh.add(new THREE.Mesh(g, statueMat));
+        }
+        statues.add(mesh);
+        return mesh;
+      };
 
       // Plinths. Sunk below their step, for the same z-fighting reason as
-      // everything else that meets a surface.
+      // everything else here that meets a surface.
       const plinth = (x, y, z, w, h) => {
         part(box(w, h + 0.5, w), x, y + h / 2 - 0.25, z);
         part(box(w * 1.18, 0.18, w * 1.18), x, y + h, z);      // cap moulding
+        part(box(w * 1.10, 0.14, w * 1.10), x, y + h - 0.20, z);
       };
 
       const DAIS_TOP = 0.68, STEP_TOP = 0.34;
       const MZ = ALTAR_Z + 1.4;        // Michael, just forward of the altar
-
-      /* -------- Michael */
-      {
-        const H = 1.7;                                  // plinth height
-        plinth(0, DAIS_TOP, MZ, 2.5, H);
-        const base = DAIS_TOP + H + 0.09;
-
-        // Robe: hem wide, drawn in to the shoulders.
-        /* Flared hem, drawn in at the waist, out again across the chest. A
-         * straight taper lathes into a traffic cone — the waist is the single
-         * profile point that makes it read as a figure under cloth. */
-        const robe = [
-          [0.00, 0.00], [0.90, 0.00], [0.96, 0.035], [0.88, 0.14], [0.70, 0.34],
-          [0.58, 0.50], [0.54, 0.60], [0.58, 0.70], [0.60, 0.80],
-          [0.54, 0.90], [0.40, 0.97], [0.00, 1.00],
-        ].map(([x, y]) => new THREE.Vector2(x * 1.16, y * 3.7));
-        part(new THREE.LatheGeometry(robe, 24), 0, base, MZ);
-
-        const shoulder = base + 3.7;
-        part(ball(0.36), 0, shoulder + 0.36, MZ);                       // head
-        part(new THREE.TorusGeometry(0.56, 0.055, 8, 24),
-             0, shoulder + 0.44, MZ - 0.30, [0.30, 0, 0]);              // halo
-
-        // Arms: right raised with the sword, left lowered holding the scales
-        // of judgement, which is how he is nearly always shown.
-        part(box(0.22, 1.5, 0.22), 0.62, shoulder - 0.32, MZ, [0, 0, -0.42]);
-        part(box(0.22, 1.4, 0.22), -0.60, shoulder - 0.50, MZ, [0, 0, 0.16]);
-
-        // The sword, upright.
-        part(box(0.13, 3.0, 0.13), 1.02, shoulder + 1.05, MZ, [0, 0, -0.08]);
-        part(box(0.62, 0.13, 0.16), 0.95, shoulder - 0.32, MZ);         // crossguard
-        part(box(0.17, 0.30, 0.17), 0.93, shoulder - 0.56, MZ);         // grip
-
-        /* Wings. Flattened tapered solids rather than planes: a wing IS thin,
-         * so a thin box is the honest primitive, and it still has a silhouette
-         * from the side where a plane would vanish. */
-        /* A fan of tapered feathers per side, radiating from one point at the
-         * shoulder and rising above the head. The first attempt was two big
-         * slabs set at an angle, which from the floor of the nave read
-         * unmistakably as a windmill: the giveaway is that real wings radiate
-         * from a single joint and sweep UP, they do not stick out sideways. */
-        for (const s of [-1, 1]) {
-          const sx = s * 0.46, sy = shoulder + 0.12, sz = MZ - 0.40;
-          /* Wide enough to OVERLAP. Feathers 0.46 deep at 18 degrees apart
-           * leave gaps, and a wing with gaps in it is a rake. Overlapping
-           * them merges the fan into one mass that still shows its edges. */
-          const feathers = [
-            [2.30, 0.82, 0.06], [2.65, 0.80, 0.32], [2.80, 0.76, 0.58],
-            [2.60, 0.68, 0.84], [2.15, 0.58, 1.10], [1.60, 0.46, 1.34],
-          ];
-          for (const [len, ht, tilt] of feathers) {
-            const a = s > 0 ? tilt : Math.PI - tilt;
-            part(box(len, ht, 0.12),
-                 sx + Math.cos(a) * len * 0.5,
-                 sy + Math.sin(a) * len * 0.5,
-                 sz, [0, s * 0.20, a]);
-          }
-        }
-      }
-
-      /* -------- the wolf, and the dragon */
       const BEAST_X = 7.4;
-      {
-        // Wolf, sitting: the Cossack who could turn into one and catch arrows.
+
+      /* ---------------------------------------------------------- Michael
+       * Sword raised, shield on the left arm. That pairing is not decorative:
+       * Michael with a sword is the arms of Kyiv, and this memorial is for the
+       * people who defended it. The shield face is left plain — a raised boss
+       * and nothing more. A state coat of arms carved on a statue in a room
+       * that is not a state institution invites a reading nobody here wants. */
+      const MICHAEL_H = 3.32;          // hem to the shoulder shelf
+      const michael = carve(() => {
+        const H = 1.7;
+        plinth(0, DAIS_TOP, MZ, 2.5, H);
+        const y0 = DAIS_TOP + H + 0.09;
+
+        /* The robe. Sections are ellipses — wide across, shallow front to
+         * back — because a person is, and a lathe cannot say so. Folds come
+         * from the per-angle shape function: the radius is modulated around
+         * the section by two out-of-phase cosines whose amplitude grows
+         * toward the hem, which is where cloth actually gathers. */
+        /* Creases, not ripples. A plain cosine gives a fluted column; cloth
+         * hangs in flat panels separated by sharp valleys, which is what the
+         * signed power below produces. Amplitude grows toward the hem because
+         * that is where the fabric gathers.
+         *
+         * The lobe count and the section count are not independent. The first
+         * pass ran 11 folds against 26 segments — under three samples per
+         * fold — and the folds simply vanished into the smooth shading. Any
+         * fold pattern needs four or five segments per lobe to survive. */
+        const drape = (a, t) => {
+          const amp = 0.115 * Math.pow(1 - t, 1.35) + 0.010;
+          const w = Math.cos(a * 11) * 0.62 + Math.cos(a * 7 + 1.9) * 0.38;
+          return 1 + amp * Math.sign(w) * Math.pow(Math.abs(w), 0.6);
+        };
+        // The fourth column marks a section as smooth: the belt is leather
+        // over the gathered cloth, so the folds stop at it and start again
+        // above. Modulating the belt with the same folds turns it into a
+        // rope, and a rope at the waist reads as a monk, not an archangel.
+        //
+        // The first section is BELOW the hem and narrower: it tucks the cloth
+        // under itself, so the end cap sits up inside the robe. Capping the
+        // hem flat instead puts a down-facing ring right on the silhouette,
+        // and a down-facing ring is exactly what the grime term darkens — it
+        // drew a black line round the bottom of the figure.
+        const robe = [
+          [-0.05, 0.62, 0.58, 1], [0.00, 1.14, 1.04], [0.09, 1.09, 0.99],
+          [0.30, 1.00, 0.91], [0.70, 0.87, 0.79], [1.15, 0.75, 0.68],
+          [1.65, 0.64, 0.58], [2.10, 0.55, 0.49], [2.26, 0.505, 0.445],
+          [2.30, 0.550, 0.485, 1], [2.44, 0.550, 0.485, 1], [2.48, 0.515, 0.450, 1],
+          [2.62, 0.560, 0.460], [2.95, 0.620, 0.450],
+          /* Shoulders are a shelf, not a ramp — a smooth taper from chest to
+           * neck gives a chess pawn. But not a SQUARE shelf either: at 0.735
+           * held dead flat for two sections it read as a coathanger, and 3.2
+           * shoulder-widths to a head is broader than any figure carved by
+           * anyone. This rounds over the top and comes in a little. */
+          [3.16, 0.665, 0.455], [3.26, 0.680, 0.450], [3.34, 0.660, 0.440],
+          [3.44, 0.545, 0.395], [3.54, 0.345, 0.300],
+          [3.64, 0.225, 0.205], [3.78, 0.210, 0.192],
+        ];
+        part(loft(robe.map(([y, rx, ry, smooth]) =>
+          ({ p: [0, y0 + y, MZ], rx, ry, shape: smooth ? null : drape })),
+          { radial: 48, seed: [1, 0, 0] }));
+
+        /* A mantle over the shoulders, open down the front. This is the one
+         * addition that is purely about reading rather than accuracy: a
+         * single unbroken robe from hem to neck gives the eye nothing to
+         * measure the figure against, and the same silhouette with a second
+         * layer over it stops looking like a bell. It also covers the join
+         * where the wings meet the back, which is the hardest junction here.
+         *
+         * Angles run from +X at zero and reach the nave-facing front at 270,
+         * so a 270-degree sweep starting at 315 leaves the front open. */
+        part(loft([
+          // Turned in at the top as well as the bottom: an open ring edge
+          // sitting proud of the shoulders reads as a step, not a collar.
+          [3.44, 0.570, 0.410], [3.40, 0.660, 0.450],
+          [3.34, 0.720, 0.485], [3.22, 0.770, 0.535], [2.90, 0.730, 0.520],
+          [2.40, 0.685, 0.505], [1.90, 0.725, 0.545], [1.60, 0.790, 0.595],
+          // The last two turn back IN toward the robe. A shell simply
+          // stopped in mid-air shows its open underside as a row of dark
+          // slots; turning the edge under gives it a hem instead.
+          [1.50, 0.780, 0.588], [1.46, 0.660, 0.520],
+        ].map(([y, rx, ry]) => ({
+          p: [0, y0 + y, MZ], rx, ry,
+          shape: (a) => 1 + 0.035 * Math.cos(a * 8) + 0.018 * Math.cos(a * 5 + 2.1),
+        })), { radial: 34, seed: [1, 0, 0], arc: [Math.PI * 1.75, Math.PI * 3.25] }));
+
+        const sh = y0 + MICHAEL_H;          // the shoulder shelf
+
+        /* Head. A lofted skull — chin, jaw, cheekbones, brow, cranium — is a
+         * different object from a sphere, and the head is where a viewer
+         * looks first. The spine drifts backward as it rises, because a
+         * profile is not symmetrical about a vertical line: the face is
+         * forward of the axis and the cranium is behind it. */
+        const HY = sh + 0.46;
+        const head = [
+          [0.000, 0.106, 0.114, 0.035], [0.075, 0.168, 0.188, 0.022],
+          [0.170, 0.218, 0.233, 0.004], [0.300, 0.246, 0.256, -0.012],
+          [0.420, 0.244, 0.250, -0.020], [0.530, 0.220, 0.226, -0.028],
+          [0.615, 0.154, 0.161, -0.032], [0.660, 0.058, 0.064, -0.034],
+        ];
+        part(loft(head.map(([y, rx, ry, dz]) => ({ p: [0, HY + y, MZ + dz], rx, ry })),
+                  { radial: 20, seed: [1, 0, 0] }));
+        /* A nose and nothing else. The pass before this one had a brow ridge
+         * too — a shallow bar across the eye line — and it rendered as a
+         * horizontal dark band, which is to say as sunglasses. Anything that
+         * spans the eyes and catches a shadow will do that. Carvers get away
+         * with a brow because they have a real light and a real undercut;
+         * here the honest move is to leave the face smooth, which is what
+         * weathered stone looks like at nave distance anyway.
+         *
+         * The nose is a wedge, not a sphere. A protruding sphere reads as a
+         * hole: its lower half faces down, and everything facing down here is
+         * darkened as grime. */
+        part(loft([
+          [0.410, 0.018, 0.020], [0.340, 0.028, 0.046], [0.290, 0.034, 0.056],
+        ].map(([y, rx, ry]) => ({ p: [0, HY + y, MZ + 0.216], rx, ry })),
+          { radial: 8, seed: [1, 0, 0] }));                                    // nose
+        /* Hair, as a mass with an edge. At the distance this is normally read
+         * — the head is thirty pixels from the nave — no feature survives
+         * except the SILHOUETTE, so what matters is that the crown is not a
+         * bare ovoid and that there is a hairline to cast a line of shadow.
+         * The lobes give it locks rather than a helmet. */
+        const locks = (a) => 1 + 0.070 * Math.cos(a * 7) + 0.038 * Math.cos(a * 4 + 0.8);
+        part(loft([
+          [0.030, 0.190, 0.205], [0.150, 0.252, 0.272], [0.270, 0.292, 0.312],
+          [0.400, 0.302, 0.312], [0.530, 0.272, 0.280], [0.620, 0.196, 0.206],
+          [0.678, 0.080, 0.088],
+        ].map(([y, rx, ry]) => ({ p: [0, HY + y, MZ - 0.085], rx, ry, shape: locks })),
+          // An open shell round the back and sides, leaving the face clear.
+          // As a closed solid it was a swim cap with a black band across the
+          // eyes — the band being its bottom cap, a downward-facing disc
+          // standing proud of the skull.
+          { radial: 26, seed: [1, 0, 0], arc: [Math.PI * 1.72, Math.PI * 3.28] }));
+        // Halo: a ring, not a hoop. The first one was 0.58 across against a
+        // 0.23 head and read as a handle screwed to the back of the skull.
+        part(new THREE.TorusGeometry(0.395, 0.036, 8, 28),
+             0, HY + 0.40, MZ - 0.30, [0.34, 0, 0]);
+
+        /* Arms, lofted with an elbow and a taper — the two things a box arm
+         * cannot have — and thick at the top, because what hangs from the
+         * shoulder of a robed figure is a sleeve, not a wrist. */
+        const arm = (side, pts) => part(loft(
+          pts.map(([x, y, z, r]) => ({ p: [side * x, sh + y, MZ + z], rx: r })),
+          { radial: 11, seed: [0, 0, 1] }));
+        // Right: bent at the elbow, the fist back up at shoulder height so
+        // the sword stands vertically clear of the body.
+        arm(1, [[0.60, -0.03, 0.03, 0.190], [0.90, -0.36, 0.07, 0.152],
+                [1.07, -0.70, 0.06, 0.128], [1.15, -0.36, 0.01, 0.106],
+                [1.17, -0.05, -0.03, 0.092]]);
+        part(ball(0.112), 1.17, sh - 0.01, MZ - 0.03);                        // fist
+        // Deltoids. Without them the arm is a tube socketed into a corner,
+        // and the corner is the thing you see.
+        for (const s of [-1, 1]) {
+          part(ball(0.215), s * 0.58, sh - 0.05, MZ + 0.02, null, [1, 0.88, 0.94]);
+        }
+        // Left: down and forward, carrying the shield, with the sleeve
+        // hanging open at the elbow.
+        arm(-1, [[0.60, -0.04, 0.03, 0.190], [0.85, -0.44, 0.11, 0.154],
+                 [0.95, -0.86, 0.21, 0.126], [0.92, -1.18, 0.37, 0.104]]);
+        part(loft([
+          [-0.40, 0.215, 0.185], [-0.62, 0.250, 0.205], [-0.86, 0.150, 0.130],
+        ].map(([y, rx, ry]) => ({ p: [-0.90, sh + y, MZ + 0.14], rx, ry })),
+          { radial: 12, seed: [1, 0, 0] }));                                   // sleeve
+        part(ball(0.100), -0.92, sh - 1.24, MZ + 0.40);                        // hand
+
+        /* The sword, upright. A tapered lenticular blade with a ridge down
+         * it: the ridge is the only part that ever catches the spotlight
+         * squarely, and it is what draws the eye up the whole figure. */
+        const SY = sh + 0.10;
+        part(loft([
+          [0.00, 0.098, 0.030], [1.10, 0.092, 0.028], [2.15, 0.074, 0.022],
+          [2.80, 0.048, 0.015], [3.05, 0.010, 0.006],
+        ].map(([y, rx, ry]) => ({
+          p: [1.17, SY + y, MZ - 0.03], rx, ry,
+          shape: (a) => 1 + 0.40 * Math.pow(Math.abs(Math.cos(a)), 6),
+        })), { radial: 14, seed: [1, 0, 0] }));
+        // Above the fist, not through it. At SY-0.05 the crossguard sat on
+        // top of the closed hand and the whole assembly read as a mallet.
+        part(box(0.54, 0.068, 0.130), 1.17, SY + 0.06, MZ - 0.03);            // crossguard
+        part(box(0.082, 0.34, 0.082), 1.17, SY - 0.16, MZ - 0.03);            // grip
+        part(ball(0.066), 1.17, SY - 0.36, MZ - 0.03, null, [1.3, 0.8, 1.3]); // pommel
+
+        /* The shield, on the left forearm. Dished, with a boss. */
+        part(loft([
+          [0.00, 0.64], [0.06, 0.625], [0.14, 0.53], [0.18, 0.38], [0.21, 0.00],
+        ].map(([d, r]) => ({ p: [-0.96, sh - 1.16, MZ + 0.44 + d], rx: r })),
+          { radial: 24, seed: [1, 0, 0] }));
+        part(ball(0.14), -0.96, sh - 1.16, MZ + 0.50, null, [1, 1, 0.7]);
+
+        /* ---- the wings.
+         *
+         * Four attempts got here, and the last failure is the instructive
+         * one. Two slabs at an angle read from the floor of the nave as a
+         * windmill. A single fan of separated feathers read as a rake. Three
+         * overlapping rows of carefully shaped feathers read as twenty-six
+         * black threads either side of two bare bones — and THAT one was not
+         * a shape problem at all. Every feather was being rotated
+         * individually from world axes, so its flat face ended up pointing
+         * sideways, and a wing presented edge-on to the viewer has no
+         * surface to catch light with. The bones, being round, were the only
+         * part left that could.
+         *
+         * A wing is a SURFACE. So it is authored flat in its own plane — x
+         * out along the span, y up, +Z the face that looks at the nave —
+         * with every feather lying in that plane, and the finished wing is
+         * swept back as one piece. The bone goes behind the plumage where a
+         * bone belongs, and it is thin, because on a real wing you cannot
+         * see it at all. */
+        for (const s of [-1, 1]) {
+          const frame = new THREE.Matrix4().makeRotationY(s * 0.46);
+          frame.premultiply(new THREE.Matrix4().makeTranslation(0, sh + 0.10, MZ - 0.34));
+          inFrame(frame, () => {
+            // Leading edge: out and up, drawn back in above the head. The z
+            // bow keeps the wing from being a flat card seen end-on.
+            const LEx = (t) => s * (0.52 + 1.86 * Math.sin(t * 1.34));
+            const LEy = (t) => 0.02 + 3.20 * Math.pow(t, 0.86);
+            const LEz = (t) => -0.16 * Math.sin(t * Math.PI);
+
+            part(ball(0.32), s * 0.34, 0.02, -0.10, null, [1.15, 0.85, 0.70]); // joint
+            const bone = [];
+            for (let i = 0; i <= 8; i++) {
+              const t = i / 8;
+              bone.push({ p: [LEx(t), LEy(t), LEz(t) - 0.06],
+                          rx: 0.080 * (1 - t * 0.80) + 0.016 });
+            }
+            part(loft(bone, { radial: 8, seed: [0, 0, 1] }));
+
+            /* `k0`/`k1` ramp the length across the row. The first pass made
+             * the middle feather of each row the longest, which scalloped
+             * the trailing edge into a sawtooth. Real rows ramp one way:
+             * primaries lengthen toward the tip, secondaries shorten. */
+            const ROWS = [
+              // t0   t1   n  length width thick fan0  fan1  k0    k1     z
+              [0.40, 1.00, 13, 2.30, 0.172, 0.040, 0.10, 0.55, 0.74, 1.06, -0.03],
+              [0.12, 0.66, 11, 1.62, 0.164, 0.038, 0.02, 0.22, 1.02, 0.80,  0.02],
+              [0.05, 0.50, 10, 0.96, 0.154, 0.036, 0.00, 0.13, 1.00, 0.88,  0.07],
+              [0.04, 0.90, 20, 0.44, 0.094, 0.028, 0.00, 0.32, 1.00, 0.86,  0.12],
+            ];
+            for (const [t0, t1, cnt, len, wid, th, f0, f1, k0, k1, dz] of ROWS) {
+              for (let i = 0; i < cnt; i++) {
+                const f = cnt === 1 ? 0 : i / (cnt - 1);
+                const t = t0 + (t1 - t0) * f;
+                const fan = f0 + (f1 - f0) * f;
+                // A little deterministic scatter, so the row is plumage and
+                // not a machined comb. No Math.random anywhere in this file:
+                // the room has to be the same room on every visit.
+                const j = Math.sin(i * 12.9898 + len * 78.233) * 43758.5453;
+                const wob = (j - Math.floor(j)) - 0.5;
+                // Down and out, entirely within the wing plane: the rotation
+                // is about the plane's own normal, so the feather stays flat.
+                along(feather(len * (k0 + (k1 - k0) * f + wob * 0.06), wid, th,
+                              -0.12 * len),
+                      [LEx(t), LEy(t), LEz(t) + dz],
+                      [s * (fan + wob * 0.05), -1, 0], 0);
+              }
+            }
+          });
+        }
+      });
+
+      /* ------------------------------------------------------------- wolf
+       * Sitting, facing down the nave. The Cossack-characternyk who could
+       * turn into a wolf and catch arrows out of the air — folklore old
+       * enough to be nobody's property, and worn on units' sleeves today. */
+      const wolf = carve(() => {
         const H = 1.15;
         plinth(-BEAST_X, STEP_TOP, MZ + 0.6, 2.0, H);
-        const b = STEP_TOP + H + 0.09;
-        part(ball(0.78), -BEAST_X, b + 0.80, MZ + 0.6, null, [1, 1.15, 0.85]);   // haunches
-        part(box(0.62, 1.5, 0.62), -BEAST_X, b + 1.55, MZ + 0.35);                // chest
-        part(ball(0.44), -BEAST_X, b + 2.42, MZ + 0.28, null, [1, 0.95, 1.15]);   // skull
-        part(box(0.30, 0.30, 0.62), -BEAST_X, b + 2.30, MZ - 0.14);               // muzzle
+        const X = -BEAST_X, Z = MZ + 0.6, b = STEP_TOP + H + 0.09;
+        const at = (x, y, z, rx, ry) => ({ p: [X + x, b + y, Z + z], rx, ry });
+
+        /* One spine from the seat to the withers. A sitting dog's back is a
+         * single curve and reads wrong the moment it is two boxes. */
+        part(loft([
+          at(0, 0.22, -0.86, 0.42, 0.40), at(0, 0.42, -0.74, 0.56, 0.52),
+          at(0, 0.78, -0.56, 0.62, 0.56), at(0, 1.18, -0.34, 0.58, 0.52),
+          at(0, 1.56, -0.10, 0.52, 0.47), at(0, 1.92, 0.10, 0.45, 0.42),
+          at(0, 2.14, 0.20, 0.38, 0.36),
+        ], { radial: 16, seed: [1, 0, 0] }));
+        // Haunches, one each side, flattened against the body.
         for (const s of [-1, 1]) {
-          part(box(0.20, 0.42, 0.14), -BEAST_X + s * 0.26, b + 2.80, MZ + 0.34,
-               [0, 0, s * 0.18]);                                                 // ears
-          part(box(0.24, 1.1, 0.24), -BEAST_X + s * 0.36, b + 0.72, MZ - 0.10);   // forelegs
+          part(loft([
+            at(s * 0.30, 0.34, -0.74, 0.20, 0.30), at(s * 0.44, 0.62, -0.60, 0.26, 0.42),
+            at(s * 0.42, 0.92, -0.46, 0.22, 0.36), at(s * 0.34, 1.10, -0.36, 0.14, 0.22),
+          ], { radial: 12, seed: [1, 0, 0] }));
+          // Hind foot, tucked forward under the haunch.
+          part(loft([
+            at(s * 0.36, 0.14, -0.52, 0.13, 0.11), at(s * 0.36, 0.10, -0.24, 0.13, 0.11),
+            at(s * 0.36, 0.08, -0.06, 0.12, 0.10),
+          ], { radial: 9, seed: [1, 0, 0] }));
+          // Foreleg: straight, braced, tapering to the pastern.
+          part(loft([
+            at(s * 0.30, 1.62, 0.04, 0.15, 0.16), at(s * 0.32, 1.10, 0.10, 0.115, 0.12),
+            at(s * 0.33, 0.55, 0.14, 0.095, 0.10), at(s * 0.33, 0.16, 0.16, 0.095, 0.10),
+            at(s * 0.33, 0.06, 0.26, 0.085, 0.11),
+          ], { radial: 10, seed: [1, 0, 0] }));
         }
-        part(box(0.26, 0.26, 1.1), -BEAST_X, b + 0.42, MZ + 1.20, [0.5, 0, 0]);   // tail
-      }
-      {
-        // Dragon, couchant with the head raised: rocket artillery, whose fire
-        // is its missiles.
+        // Neck and skull, one loft: throat to nose, with the stop at the brow.
+        part(loft([
+          at(0, 2.10, 0.16, 0.34, 0.33), at(0, 2.42, 0.26, 0.29, 0.28),
+          at(0, 2.66, 0.34, 0.26, 0.26), at(0, 2.80, 0.42, 0.25, 0.25),
+          at(0, 2.80, 0.60, 0.19, 0.19), at(0, 2.74, 0.80, 0.125, 0.125),
+          at(0, 2.70, 0.98, 0.105, 0.105), at(0, 2.68, 1.06, 0.075, 0.075),
+        ], { radial: 14, seed: [1, 0, 0] }));
+        for (const s of [-1, 1]) {
+          // Ears: pricked, and tapered, which is the whole silhouette of a wolf.
+          part(loft([
+            at(s * 0.17, 2.86, 0.34, 0.11, 0.06), at(s * 0.20, 3.06, 0.30, 0.085, 0.05),
+            at(s * 0.23, 3.24, 0.27, 0.030, 0.02),
+          ], { radial: 8, seed: [1, 0, 0] }));
+          part(ball(0.045), X + s * 0.115, b + 2.795, Z + 0.86, null, [1, 0.8, 1]);  // eye ridge
+        }
+        // Tail, curled round the near haunch the way a sitting dog's lies.
+        part(loft([
+          at(0.02, 0.30, -1.00, 0.13), at(0.34, 0.20, -0.98, 0.115),
+          at(0.60, 0.14, -0.74, 0.105), at(0.66, 0.12, -0.44, 0.090),
+          at(0.56, 0.12, -0.18, 0.070), at(0.38, 0.14, -0.02, 0.045),
+        ], { radial: 10, seed: [0, 1, 0] }));
+      });
+
+      /* ---------------------------------------------------------- dragon
+       * Couchant, head raised. The dragon is what rocket artillery units put
+       * on their sleeves, and its fire is the salvo. Built as ONE loft from
+       * tail tip to nape — a serpent is the case a loft was made for, and it
+       * was the shape the old box assembly failed at worst. */
+      const dragon = carve(() => {
         const H = 1.15;
         plinth(BEAST_X, STEP_TOP, MZ + 0.6, 2.0, H);
-        const b = STEP_TOP + H + 0.09;
-        part(ball(0.85), BEAST_X, b + 0.72, MZ + 0.7, null, [1, 0.85, 1.25]);     // coiled body
-        part(box(0.46, 1.7, 0.46), BEAST_X, b + 1.55, MZ + 0.20, [0.30, 0, 0]);   // neck
-        part(box(0.44, 0.40, 0.92), BEAST_X, b + 2.40, MZ - 0.42);                // head
-        part(box(0.20, 0.18, 0.40), BEAST_X, b + 2.34, MZ - 1.02);                // snout
+        const X = BEAST_X, Z = MZ + 0.6, b = STEP_TOP + H + 0.09;
+        const at = (x, y, z, rx, ry) => ({ p: [X + x, b + y, Z + z], rx, ry });
+
+        const body = [
+          at(0.72, 0.12, -1.28, 0.045), at(0.66, 0.14, -1.52, 0.085),
+          at(0.40, 0.17, -1.74, 0.135), at(0.02, 0.20, -1.80, 0.195),
+          at(-0.32, 0.24, -1.62, 0.260), at(-0.44, 0.30, -1.24, 0.335),
+          at(-0.30, 0.38, -0.82, 0.410), at(-0.08, 0.48, -0.42, 0.470),
+          at(0.00, 0.58, -0.02, 0.490), at(0.00, 0.70, 0.34, 0.440),
+          at(0.00, 0.94, 0.60, 0.360), at(0.00, 1.34, 0.66, 0.290),
+          at(0.00, 1.76, 0.66, 0.250), at(0.00, 2.10, 0.78, 0.225),
+        ];
+        part(loft(body, { radial: 16, seed: [1, 0, 0] }));
+
+        // Skull: brow, jaw, snout. Carried forward and down off the nape.
+        part(loft([
+          at(0.00, 2.22, 0.86, 0.22, 0.21), at(0.00, 2.26, 1.06, 0.20, 0.19),
+          at(0.00, 2.22, 1.26, 0.145, 0.135), at(0.00, 2.16, 1.46, 0.105, 0.100),
+          at(0.00, 2.12, 1.58, 0.070, 0.070),
+        ], { radial: 12, seed: [1, 0, 0] }));
+        part(loft([                                                    // lower jaw
+          at(0.00, 2.10, 0.92, 0.135, 0.085), at(0.00, 2.06, 1.20, 0.105, 0.070),
+          at(0.00, 2.04, 1.46, 0.070, 0.050),
+        ], { radial: 10, seed: [1, 0, 0] }));
         for (const s of [-1, 1]) {
-          part(box(0.14, 0.44, 0.14), BEAST_X + s * 0.17, b + 2.74, MZ - 0.26,
-               [0, 0, s * 0.26]);                                                 // horns
-          // Wings, half-furled.
-          for (const [len, tilt] of [[1.55, 0.22], [1.75, 0.52], [1.60, 0.82], [1.25, 1.08]]) {
-            const a = s > 0 ? tilt : Math.PI - tilt;
-            part(box(len, 0.56, 0.11),
-                 BEAST_X + s * 0.38 + Math.cos(a) * len * 0.5,
-                 b + 1.45 + Math.sin(a) * len * 0.5,
-                 MZ + 0.62, [0, s * 0.26, a]);
-          }
+          part(loft([                                                  // horns, swept back
+            at(s * 0.15, 2.36, 0.84, 0.070), at(s * 0.24, 2.64, 0.68, 0.052),
+            at(s * 0.32, 2.86, 0.46, 0.032), at(s * 0.38, 2.96, 0.26, 0.012),
+          ], { radial: 8, seed: [0, 1, 0] }));
+          part(ball(0.055), X + s * 0.145, b + 2.30, Z + 1.03, null, [1, 0.85, 1]);
+          // Forelimb, planted; the pose is couchant, so the elbows are out.
+          part(loft([
+            at(s * 0.34, 0.86, 0.42, 0.145), at(s * 0.50, 0.50, 0.56, 0.115),
+            at(s * 0.52, 0.18, 0.78, 0.100), at(s * 0.52, 0.07, 0.98, 0.085),
+          ], { radial: 9, seed: [1, 0, 0] }));
         }
-        part(box(0.24, 0.24, 1.5), BEAST_X, b + 0.44, MZ + 1.55, [0.42, 0, 0]);   // tail
+
+        /* Dorsal plates, from the shoulders down the tail. Placed in world Y
+         * rather than on the loft frame: a crest tied to a transported frame
+         * rolls over with the spine and ends up growing out of the flank. */
+        const crest = [
+          [0.00, 1.94, 0.62, 0.10], [0.00, 1.50, 0.58, 0.15], [0.00, 1.10, 0.52, 0.19],
+          [0.00, 0.86, 0.26, 0.21], [0.00, 0.90, -0.14, 0.22], [-0.06, 0.82, -0.52, 0.20],
+          [-0.24, 0.70, -0.90, 0.17], [-0.38, 0.56, -1.28, 0.13], [-0.26, 0.42, -1.60, 0.09],
+          [0.06, 0.34, -1.76, 0.06],
+        ];
+        // A 4-sided cone has its corners on ±x and ±z, so scaling x thin and
+        // z long turns it straight into a blade standing along the spine.
+        // No Y rotation: scale is applied in the local frame before rotation,
+        // so turning it 45 degrees would put the thin axis on the diagonal.
+        for (const [x, y, z, h] of crest) {
+          part(new THREE.ConeGeometry(h, h * 2.1, 4), X + x, b + y + h, Z + z,
+               [-0.12, 0, 0], [0.34, 1, 1.5]);
+        }
+
+        /* Wings, half-furled against the flanks. Membrane on ribs, not
+         * slabs: what identifies a dragon wing at any distance is the fingers
+         * showing through the skin. */
+        for (const s of [-1, 1]) {
+          const root = new THREE.Vector3(X + s * 0.30, b + 1.06, Z + 0.34);
+          // Four fingers, fanning back and up from the wrist.
+          const FING = [
+            [1.95, 0.86, -0.52], [2.10, 0.46, -0.88], [1.90, 0.10, -1.10], [1.45, -0.20, -1.10],
+          ];
+          const ribs = FING.map(([r, uy, uz]) => {
+            const tip = new THREE.Vector3(
+              X + s * (0.30 + r * 0.52), b + 1.06 + uy, Z + 0.34 + uz);
+            return (u) => root.clone().lerp(tip, u);
+          });
+          // The leading spar, thicker than the fingers, carries the whole thing.
+          part(loft([
+            { p: [root.x, root.y, root.z], rx: 0.11 },
+            { p: [X + s * 0.72, b + 1.44, Z + 0.10], rx: 0.085 },
+            { p: [X + s * 1.10, b + 1.72, Z - 0.22], rx: 0.055 },
+            { p: [X + s * 1.32, b + 1.92, Z - 0.52], rx: 0.028 },
+          ], { radial: 8, seed: [0, 1, 0] }));
+          for (let i = 0; i < ribs.length; i++) {
+            const tip = ribs[i](1);
+            part(loft([
+              { p: [root.x, root.y, root.z], rx: 0.060 },
+              { p: [root.x + (tip.x - root.x) * 0.55, root.y + (tip.y - root.y) * 0.55,
+                    root.z + (tip.z - root.z) * 0.55], rx: 0.042 },
+              { p: [tip.x, tip.y, tip.z], rx: 0.018 },
+            ], { radial: 7, seed: [0, 1, 0] }));
+            if (i > 0) part(membrane(ribs[i - 1], ribs[i], 0.30));
+          }
+          part(membrane((u) => root.clone().lerp(
+            new THREE.Vector3(X + s * 1.32, b + 1.92, Z - 0.52), u), ribs[0], 0.22));
+        }
+
+        // Tail spade.
+        part(loft([
+          at(0.74, 0.11, -1.22, 0.030, 0.030), at(0.80, 0.13, -1.06, 0.075, 0.030),
+          at(0.86, 0.15, -0.86, 0.105, 0.032), at(0.92, 0.16, -0.66, 0.055, 0.026),
+        ], { radial: 8, seed: [0, 1, 0] }));
+      });
+
+      /* ---- swapping in a real model ------------------------------------
+       * Runs only for entries that are filled in, so the default costs one
+       * `if`. A failure leaves the carved figure standing rather than an
+       * empty plinth — a memorial should never render a hole. */
+      const placeSculpture = async (spec, carved, target, fallbackH) => {
+        let GLTFLoader;
+        try {
+          ({ GLTFLoader } = await import('./vendor/three-addons/loaders/GLTFLoader.js'));
+        } catch (err) {
+          console.warn('[MemorialLight] GLTFLoader unavailable', err); return;
+        }
+        let gltf;
+        try {
+          gltf = await new GLTFLoader().loadAsync(spec.src);
+        } catch (err) {
+          console.warn('[MemorialLight] could not load ' + spec.src, err); return;
+        }
+        if (disposed) return;
+        const g = new THREE.Group();
+        gltf.scene.rotation.y = spec.turn || 0;
+        g.add(gltf.scene);
+        g.updateMatrixWorld(true);
+        // Normalise: fit the stated height, centre on the plinth, stand the
+        // base on it. Exported models arrive at every scale and origin there
+        // is, and no memorial should depend on someone getting that right.
+        const bb = new THREE.Box3().setFromObject(g);
+        const size = bb.getSize(new THREE.Vector3());
+        g.scale.setScalar((spec.height || fallbackH) / Math.max(1e-6, size.y));
+        g.updateMatrixWorld(true);
+        const nb = new THREE.Box3().setFromObject(g);
+        g.position.set(
+          target[0] - (nb.min.x + nb.max.x) / 2,
+          target[1] - nb.min.y,
+          target[2] - (nb.min.z + nb.max.z) / 2,
+        );
+        if ((spec.material || 'stone') === 'stone') {
+          g.traverse((o) => { if (o.isMesh) o.material = statueMat; });
+        }
+        statues.add(g);
+        carved.visible = false;
+      };
+      {
+        const P_TOP = DAIS_TOP + 1.7 + 0.09, B_TOP = STEP_TOP + 1.15 + 0.09;
+        const jobs = [
+          [SCULPTURES.michael, michael, [0, P_TOP, MZ], 6.6],
+          [SCULPTURES.wolf, wolf, [-BEAST_X, B_TOP, MZ + 0.6], 3.3],
+          [SCULPTURES.dragon, dragon, [BEAST_X, B_TOP, MZ + 0.6], 3.1],
+        ];
+        for (const [spec, carved, target, h] of jobs) {
+          if (spec && spec.src) placeSculpture(spec, carved, target, h);
+        }
       }
 
       /* -------- light falling on each of them */
@@ -1672,10 +2316,10 @@ function MemorialLight({
        * you see hanging in the air. Neither alone reads as a shaft of light
        * landing on a statue. */
       const statueLights = [];
-      for (const [x, reach] of [[0, 1.30], [-BEAST_X, 1.0], [BEAST_X, 1.0]]) {
+      for (const [x, reach, aimY] of [[0, 1.30, 4.4], [-BEAST_X, 1.0, 2.6], [BEAST_X, 1.0, 2.6]]) {
         const sp = new THREE.SpotLight(0xffe9cf, 0, 42, 0.40, 0.92, 1.0);
         sp.position.set(x * 0.55, 21, MZ + 5.0);
-        sp.target.position.set(x, 2.2, MZ);
+        sp.target.position.set(x, aimY, MZ);
         church.add(sp, sp.target);
         statueLights.push({ light: sp, reach });
 
@@ -1812,7 +2456,11 @@ function MemorialLight({
          * day so the stone does not go flat at noon, and never drop to nothing
          * at night, because a spotlit statue in a dark church is the whole
          * effect. */
-        for (const sl of statueLights) sl.light.intensity = (330 + d * 260) * sl.reach;
+        /* Enough to lift the stone out of the dark and no further. At 330+260
+         * the figures blew past the tone-mapping knee, went flat white and
+         * read as soap: every bit of surface detail was clipped away by the
+         * light rather than missing from the model. */
+        for (const sl of statueLights) sl.light.intensity = (185 + d * 145) * sl.reach;
         scene.fog.color.copy(sky);
         scene.fog.density = 0.020 - d * 0.007;
 

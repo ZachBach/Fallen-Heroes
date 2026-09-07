@@ -283,8 +283,9 @@ the page or the images are gone.
 Every portrait, plaque and object is deliberately empty — the frames show `—`
 and read "awaiting family submission". None of it is placeholder *text* to be
 replaced with invented content: names and faces are only ever set from
-documentation a family or unit provides. Also unset by design: the address,
-telephone and curator's line under Visit, which the hosting institution fills.
+documentation a family or unit provides. The curator's line under Visit is now set: Zach
+Auerbach curates this personally. The street address is still blank, since
+there is no building.
 
 ## Licensing
 
@@ -303,6 +304,9 @@ derivative:
 - **The name and identity.** Apache §6 grants no rights in names or marks.
   Build anything you like with the code; do not present it as *this* memorial.
 - **The curatorial text** of the rooms.
+
+Permission is given by a person and is given gladly — write to the curator,
+Zach Auerbach, at zachauerbachdev@gmail.com or +1 213 646 1877.
 
 Apache rather than MIT for two specific reasons, both of which matter for a
 memorial: §6 withholds the name, so a hostile fork cannot pass itself off as

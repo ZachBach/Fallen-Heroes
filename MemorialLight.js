@@ -1275,6 +1275,181 @@ function MemorialLight({
       rose.position.set(0, 19.0, -NAVE_L + 0.48);
       church.add(rose);
 
+      /* ------------------------------------------- the carved shields */
+      /* Heraldry along the arcade, one shield to a bay, carved in low relief.
+       *
+       * Ukrainian units carry extraordinary insignia, and the meanings are
+       * worth keeping: the Special Operations wolf comes from the old belief
+       * that Cossacks could turn into wolves and catch arrows; military
+       * intelligence took an owl, because owls eat bats; a rocket artillery
+       * regiment flies a dragon whose fire is its missiles; the naval special
+       * operations centre uses a seahorse for its adaptability to water; the
+       * LGBTI soldiers took a unicorn, which is said to die rather than be
+       * taken; a Zakarpattia unit chose the sun over wheat, for soldiers who
+       * can still bring light. The trident over the altar is the state arms.
+       *
+       * WHAT THESE ARE NOT: copies of anyone's chevron. The actual patches are
+       * artwork, designed by named artists and owned by them, and this
+       * repository is Apache-2.0 — anything embedded here gets redistributed
+       * by every fork. So what is carved is the MOTIF, not the badge: a wolf,
+       * an owl, a dragon. Those are old heraldic and folk forms belonging to
+       * nobody, and each is drawn here from scratch as a silhouette. A unit
+       * that wants its own mark on this wall can send it, like everything else
+       * on this page. */
+      const shieldMat = new THREE.MeshStandardNodeMaterial({
+        roughness: 0.82, metalness: 0.0, transparent: true, side: THREE.DoubleSide,
+      });
+      {
+        const u = uv();
+        const P = vec3(u.x.sub(0.5).mul(2.0), u.y.sub(0.5).mul(2.0), float(0));  // -1..1
+        const px = P.x, py = P.y;
+
+        // --- primitives. Everything below is built from these three.
+        const disc = (cx, cy, r) => oneMinus(smoothstep(
+          float(r).sub(0.012), float(r), tlen(vec3(px.sub(cx), py.sub(cy), float(0)))));
+        const oval = (cx, cy, rx, ry) => oneMinus(smoothstep(
+          float(0.985), float(1.0),
+          tlen(vec3(px.sub(cx).div(rx), py.sub(cy).div(ry), float(0)))));
+        const bar = (cx, cy, hw, hh) =>
+          oneMinus(smoothstep(float(hw).sub(0.012), float(hw), tabs(px.sub(cx))))
+            .mul(oneMinus(smoothstep(float(hh).sub(0.012), float(hh), tabs(py.sub(cy)))));
+
+        /* --- the six motifs, each an original silhouette ---------------- */
+
+        // Tryzub. Three prongs on a shaft — the state arms, drawn to the
+        // proportions anyone would recognise rather than traced from a file.
+        const tryzub = tmax(tmax(
+          tmax(bar(0, 0.10, 0.075, 0.62), bar(-0.34, 0.26, 0.070, 0.42)),
+          tmax(bar(0.34, 0.26, 0.070, 0.42), bar(0, -0.52, 0.16, 0.075))),
+          tmax(bar(-0.205, 0.64, 0.205, 0.062), bar(0.205, 0.64, 0.205, 0.062)));
+
+        // Owl — intelligence. Wide skull, huge facing eyes, ear tufts.
+        const owlEyes = tmax(disc(-0.20, 0.20, 0.155), disc(0.20, 0.20, 0.155));
+        const owl = tmax(
+          tmax(oval(0, -0.02, 0.46, 0.62),
+               tmax(bar(-0.32, 0.52, 0.085, 0.20), bar(0.32, 0.52, 0.085, 0.20))),
+          float(0)).sub(owlEyes.mul(0.85))
+          .add(tmax(disc(-0.20, 0.20, 0.062), disc(0.20, 0.20, 0.062)))
+          .add(bar(0, 0.02, 0.05, 0.10)).clamp(0, 1);
+
+        // Wolf — the Cossack who turns into one. Broad head, tapering muzzle,
+        // upright ears.
+        const wolf = tmax(
+          tmax(oval(0, 0.12, 0.46, 0.42), oval(0, -0.38, 0.20, 0.34)),
+          tmax(bar(-0.34, 0.52, 0.105, 0.24), bar(0.34, 0.52, 0.105, 0.24)))
+          .sub(tmax(disc(-0.17, 0.16, 0.055), disc(0.17, 0.16, 0.055)).mul(0.9))
+          .clamp(0, 1);
+
+        // Dragon — rocket artillery, whose fire is its missiles. Serpent head
+        // with a swept horn and a breath of flame.
+        const dragon = tmax(
+          tmax(oval(-0.05, 0.16, 0.40, 0.30), oval(0.30, -0.02, 0.26, 0.16)),
+          tmax(bar(-0.26, 0.50, 0.075, 0.22),
+               tmax(oval(0.62, -0.10, 0.16, 0.075), oval(0.84, -0.16, 0.10, 0.05))))
+          .sub(disc(0.06, 0.20, 0.055).mul(0.9)).clamp(0, 1);
+
+        // Seahorse — naval special operations, for adapting to the water.
+        const seahorse = tmax(tmax(
+          oval(-0.02, 0.42, 0.20, 0.26), oval(-0.30, 0.34, 0.16, 0.10)),
+          tmax(oval(0.06, 0.02, 0.17, 0.30), oval(-0.06, -0.36, 0.15, 0.22)))
+          .add(oval(-0.22, -0.56, 0.13, 0.10)).clamp(0, 1);
+
+        // Unicorn — said to die rather than be taken. Head in profile, horn
+        // raised.
+        const unicorn = tmax(tmax(
+          oval(-0.04, 0.10, 0.34, 0.42), oval(0.16, -0.32, 0.18, 0.30)),
+          tmax(bar(-0.30, 0.52, 0.085, 0.22),
+               oval(0.10, 0.66, 0.055, 0.32)))
+          .sub(disc(0.06, 0.16, 0.05).mul(0.9)).clamp(0, 1);
+
+        // Sun over wheat — soldiers who can still bring light.
+        const rays = tabs(fract(tatan(py.sub(0.22), px).mul(6.0 / Math.PI)).sub(0.5)).mul(2.0);
+        const sun = disc(0, 0.22, 0.30)
+          .add(smoothstep(float(0.55), float(0.95), rays)
+            .mul(oneMinus(smoothstep(float(0.30), float(0.58), tlen(vec3(px, py.sub(0.22), float(0)))))));
+        const wheat = tmax(tmax(bar(0, -0.55, 0.045, 0.34), bar(-0.28, -0.58, 0.040, 0.28)),
+                           bar(0.28, -0.58, 0.040, 0.28));
+        const sunwheat = tmax(sun, wheat).clamp(0, 1);
+
+        /* --- pick one per shield ---------------------------------------- */
+        const which = tfloor(fract(float(instanceIndex).mul(1.0 / 6.0).add(0.001)).mul(6.0));
+        let motif = tryzub;
+        motif = mix(motif, owl, tstep(float(0.5), which));
+        motif = mix(motif, wolf, tstep(float(1.5), which));
+        motif = mix(motif, dragon, tstep(float(2.5), which));
+        motif = mix(motif, seahorse, tstep(float(3.5), which));
+        motif = mix(motif, unicorn, tstep(float(4.5), which));
+        motif = mix(motif, sunwheat, tstep(float(5.5), which));
+
+        /* --- the shield itself, and the carving ------------------------- */
+        // Heraldic shape: square shoulders, sides drawn in, a point at the
+        // bottom. The classic form, and it reads at a distance.
+        const taper = smoothstep(float(0.35), float(-1.0), py).mul(0.55);
+        /* The outline twice, at two sizes. The difference between them is the
+         * raised bezel around the edge, and without it the plate has no border
+         * at all — the gilded device just floats on the masonry with nothing
+         * to say it is mounted on anything. A real shield reads because of its
+         * rim before it reads because of its charge. */
+        const shieldAt = (hw, top) =>
+          oneMinus(smoothstep(float(hw).sub(taper).sub(0.02), float(hw).sub(taper), tabs(px)))
+            .mul(oneMinus(smoothstep(float(top).sub(0.03), float(top), py)))
+            .mul(oneMinus(smoothstep(float(top).sub(0.03), float(top).add(0.06), py.negate())));
+        const shield = shieldAt(0.82, 0.92);
+        const border = clamp(shield.sub(shieldAt(0.70, 0.82)), float(0), float(1));
+
+        /* Relief, not paint. The motif is treated as a raised surface and lit
+         * from the upper left: the horizontal gradient of the mask becomes a
+         * fake normal, so the carving catches light on one edge and shadows on
+         * the other. It is a cheat — there is no geometry here at all — but it
+         * is the cheat that makes a flat panel read as cut stone. */
+        const lift = motif.sub(0.5).mul(2.0).clamp(0, 1);
+        const edgeL = motif.sub(oneMinus(smoothstep(float(0.0), float(0.03), px.add(0.012))).mul(0));
+        const bevel = smoothstep(float(0.0), float(0.42), motif)
+          .mul(oneMinus(smoothstep(float(0.58), float(1.0), motif)));
+        const rim = smoothstep(float(0.86), float(1.0), tabs(px).add(tabs(py)).mul(0.62));
+
+        const stoneBase = mix(vec3(0.180, 0.172, 0.156), vec3(0.245, 0.234, 0.210),
+          mx_noise_float(positionWorld.mul(3.0)).mul(0.5).add(0.5));
+        // The device itself is gilded — old shields were, and it ties the wall
+        // to the glass and the flames.
+        const gilt = mix(GLASS_GOLD.mul(0.95), GLASS_GOLD_PALE.mul(1.15), bevel);
+        let col = mix(stoneBase, gilt, lift.mul(0.92));
+        col = col.add(bevel.mul(0.30));                       // catch light on the cut edge
+        col = col.sub(rim.mul(0.04));
+        // Bezel: a lighter band of dressed stone all the way round, so the
+        // plate is an object on the wall rather than a stain in it.
+        col = mix(col, vec3(0.34, 0.325, 0.295).add(goldVec().mul(0.10)), border.mul(0.92));
+        // Warm from the candles below, cool from the windows above.
+        col = col.mul(uDay.mul(0.45).add(0.80))
+          .add(goldVec().mul(oneMinus(smoothstep(float(0.0), float(1.0), py)).mul(0.05)));
+
+        shieldMat.colorNode = vec4(col, shield);
+        shieldMat.roughnessNode = clamp(oneMinus(lift.mul(0.45)).mul(0.9), float(0.18), float(1));
+        shieldMat.emissiveNode = gilt.mul(lift).mul(0.22);
+      }
+
+      const shieldGeo = new THREE.PlaneGeometry(4.6, 5.4);
+      const shields = new THREE.InstancedMesh(shieldGeo, shieldMat, BAYS * 2);
+      {
+        const m = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const axis = new THREE.Vector3(0, 1, 0);
+        const one = new THREE.Vector3(1, 1, 1);
+        let k = 0;
+        for (let side = -1; side <= 1; side += 2) {
+          for (let i = 0; i < BAYS; i++) {
+            const z = -NAVE_L + BAY_Z * (i + 0.5);
+            q.setFromAxisAngle(axis, side * -Math.PI / 2);
+            shields.setMatrixAt(k++, m.compose(
+              new THREE.Vector3(side * (NAVE_W + 0.90), 6.6, z), q, one));
+          }
+        }
+        shields.count = k;
+        shields.instanceMatrix.needsUpdate = true;
+      }
+      shields.frustumCulled = false;
+      church.add(shields);
+
       /* -------- what comes through the windows */
       /* One shaft per window, as an additive card hung in the air on the axis
        * the light travels. This is the cheap way to do volumetric light and it

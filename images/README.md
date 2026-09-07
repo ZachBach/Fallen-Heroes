@@ -72,13 +72,44 @@ photographs came from has a hole in exactly the place it should be strongest.
 
 | file | subject | source | licence |
 | ---- | ------- | ------ | ------- |
-| `hero-defenders-vony-razom.jpg` | Defenders in the field — hero, room 01 | [Vony Razom on Unsplash](https://unsplash.com/photos/OMQB3qvCTq4) ([profile](https://unsplash.com/@vonyrazom)) | Unsplash Licence — free to use, credited on the page |
-| `memorial-statue-moy-de-vitry.jpg` | People beside a statue — not currently placed | [Jonathan Ansel Moy de Vitry on Unsplash](https://unsplash.com/photos/VazH_1OSP9E) ([profile](https://unsplash.com/@jmdv)) | Unsplash Licence — free to use, credit if placed |
+| `hero-maidan-flags.mp4` | The Field of Memory, Kyiv — hero, room 01 | Pexels video `18550804` | Pexels licence — free to use. **Contributor name still needed** |
+| `hero-maidan-flags.jpg` | Poster frame for the above | derived from the same video | as above |
+| `memorial-statue-moy-de-vitry.jpg` | Motherland Monument, Kyiv — **not placed** | [Jonathan Ansel Moy de Vitry on Unsplash](https://unsplash.com/photos/VazH_1OSP9E) ([profile](https://unsplash.com/@jmdv)) | Unsplash Licence |
 
-Both were downloaded at 1920px and committed. Nothing is hotlinked: the
-Unsplash CDN never appears in a src, only in the credit links, which are
-anchors and make no request until somebody clicks them.
+Nothing is hotlinked. The Pexels and Unsplash CDNs never appear in a `src`.
 
-`memorial-statue-moy-de-vitry.jpg` is 1920×2560 — portrait, so it suits a
-portrait frame rather than the full-bleed hero. It is committed but not
-placed. Delete it if it is not wanted.
+### Open: the video contributor
+
+Pexels asks for no attribution but deserves it, and the page currently says
+"contributor credit pending", which is a placeholder and should not ship that
+way for long. Pexels' page is behind a Cloudflare challenge so the name could
+not be read automatically — take it from the download page and put it in
+`HERO.credit` in `index.html`.
+
+### Why the 4K master is not in this repo
+
+The original is 3840×2160 at 26.7 Mbps with an audio track: **30.76 MB**. It
+lives in `video-hero/`, which is gitignored. What ships is the 1080p
+transcode, audio stripped: **3.06 MB**, a tenth of the size and
+indistinguishable in a 62vh banner.
+
+That is not tidiness. Git history is permanent — a 30 MB binary committed once
+stays in every clone forever, even if deleted in the next commit, and this repo
+is 2.9 MB without it. If the master is ever needed again it is on Pexels.
+
+```
+ffmpeg -i master.mp4 -vf scale=1920:-2 -c:v libx264 -preset slow -crf 28   -profile:v high -pix_fmt yuv420p -movflags +faststart -an out.mp4
+```
+
+`-an` strips audio: a memorial must not make noise, and browsers block
+autoplay with sound anyway. `+faststart` moves the index to the front so it
+starts playing before it has fully downloaded.
+
+### A note on the statue photograph
+
+`memorial-statue-moy-de-vitry.jpg` is committed but deliberately unplaced. It
+shows the Motherland Monument with the **Soviet coat of arms** still on the
+shield — Ukraine replaced it with the tryzub in August 2023, as part of
+decommunisation during this war. Verify before using it anywhere: a hammer and
+sickle at the head of a memorial to Ukrainians killed fighting Russia is not a
+detail to discover after publishing.

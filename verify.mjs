@@ -93,7 +93,17 @@ try {
     const bad404 = [];
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 300)); });
     page.on('pageerror', (e) => errors.push(String(e).slice(0, 300)));
-    page.on('requestfailed', (r) => errors.push(`REQUEST FAILED ${r.url()} — ${r.failure()?.errorText}`));
+    /* ERR_ABORTED on a media file is not a failure. A <video> requests byte
+     * ranges and cancels them once it has buffered enough, and every reload
+     * aborts whatever was in flight — so the hero video reports one on nearly
+     * every load while playing perfectly. The absence of that error was never
+     * the thing worth checking; that the video is actually PLAYING is, and
+     * that is asserted directly below. */
+    page.on('requestfailed', (r) => {
+      const benign = /\.(mp4|webm|ogg)(\?|$)/i.test(r.url())
+        && r.failure()?.errorText === 'net::ERR_ABORTED';
+      if (!benign) errors.push(`REQUEST FAILED ${r.url()} — ${r.failure()?.errorText}`);
+    });
     page.on('response', (r) => {
       if (r.status() >= 400 && !BENIGN_404.some((re) => re.test(r.url()))) {
         bad404.push(`HTTP ${r.status()} ${r.url()}`);
@@ -138,6 +148,18 @@ try {
         if (!stats.particles) { console.log('  FAIL: particle simulation did not start'); failures++; }
         if (stats.fps < 20) { console.log(`  FAIL: peak ${stats.fps} fps is too slow`); failures++; }
       }
+      // The hero video: loaded, decoding at the right size, and running.
+      const vid = await page.evaluate(() => {
+        const v = document.getElementById('hero-video');
+        if (!v) return { exists: false };
+        return { exists: true, readyState: v.readyState, paused: v.paused,
+                 w: v.videoWidth, h: v.videoHeight, err: v.error && v.error.message };
+      });
+      console.log(`  hero video: ${JSON.stringify(vid)}`);
+      if (!vid.exists) { console.log('  FAIL: hero video element missing'); failures++; }
+      else if (vid.err) { console.log(`  FAIL: hero video error — ${vid.err}`); failures++; }
+      else if (vid.readyState < 2 || !vid.w) { console.log('  FAIL: hero video never decoded'); failures++; }
+
       await page.screenshot({ path: `${SHOTS}/memorial-${backend}-idle.png` });
 
       for (let i = 0; i < 5; i++) {

@@ -1,2 +1,6 @@
 .verify-out/
 .image-slots.state.json
+
+# The 4K master for the hero video. 30 MB, and git history is forever —
+# images/hero-maidan-flags.mp4 is the 3 MB transcode that actually ships.
+video-hero/

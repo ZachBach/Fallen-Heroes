@@ -42,8 +42,12 @@ a{color:#C9A227;text-decoration:none}a:hover{color:#e0bb45}
 
   <section data-screen-label="01 Hero" style="display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.1)">
     <div style="position:relative;height:62vh;min-height:380px;overflow:hidden">
-      <image-slot id="memorial-hero" shape="rect" fit="cover" placeholder="Hero photograph — set HERO.src in the script below"></image-slot>
+      <video id="hero-video" autoplay muted loop playsinline poster="./images/hero-maidan-flags.jpg" src="./images/hero-maidan-flags.mp4" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 78%;display:block"></video>
       <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,14,16,.5) 0%,rgba(13,14,16,0) 30%,rgba(13,14,16,.28) 72%,#0d0e10 100%)"></div>
+    </div>
+    <div style="padding:20px 6vw 0;display:flex;flex-direction:column;gap:7px">
+      <p style="margin:0;font:400 clamp(16px,1.4vw,20px)/1.5 'Cormorant Garamond',serif;color:rgba(244,242,238,.80);max-width:62ch;text-wrap:pretty">{{ heroCaption }}</p>
+      <p style="margin:0;font:400 10.5px/1.75 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8a8478;max-width:76ch;text-wrap:pretty">{{ heroCredit }}</p>
     </div>
     <div style="padding:52px 6vw 84px;display:flex;flex-direction:column;gap:30px">
       <div style="display:flex;align-items:center;gap:14px;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#C9A227">
@@ -240,14 +244,13 @@ const INDEX = 'А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С
  *
  * src MUST be a local path. Anything cross-origin breaks the page's
  * no-external-request guarantee and verify.mjs will fail the build. */
+/* The hero is a video, not an image-slot: image-slot only takes stills.
+ * Muted and loud are not options here — a memorial must not make noise, and
+ * browsers block autoplay with audio regardless, so the audio track is
+ * stripped at transcode rather than merely silenced. */
 const HERO = {
-  src: './images/hero-defenders-vony-razom.jpg',
-  // image-slot renders this as Unsplash prescribes — the photographer's name
-  // linked to their profile, "Unsplash" linked to the homepage, both carrying
-  // the required utm referral params. Keep the exact wording; the component
-  // pattern-matches it.
-  credit: 'Photo by Vony Razom on Unsplash',
-  creditHref: 'https://unsplash.com/@vonyrazom',
+  caption: 'Brave soldiers fighting for the freedoms of their country and its citizens.',
+  credit: 'The Field of Memory, Kyiv — one flag planted for each of the fallen. Video from Pexels under its free licence; contributor credit pending.',
 };
 const OBJECTS = [
   { slotId: 'obj-1', src: null, credit: null, creditHref: null, placeholder: 'Object photograph — flat field, true scale', title: 'Field notebook', meta: 'Accession pending · conservation note on request' },
@@ -300,7 +303,6 @@ class Component extends DCLogic {
       if (p.credit) el.setAttribute('credit', p.credit);
       if (p.creditHref) el.setAttribute('credit-href', p.creditHref);
     };
-    set('memorial-hero', HERO);
     PORTRAITS.forEach((p, i) => set('portrait-' + (i + 1), p));
     OBJECTS.forEach((o) => set(o.slotId, o));
   }
@@ -309,6 +311,17 @@ class Component extends DCLogic {
 
   componentDidMount() {
     this.applyPhotographs();
+    /* Someone who has asked their system for reduced motion should not be
+     * handed an autoplaying video, least of all on a memorial. Pausing at
+     * frame zero leaves the poster showing, so they still get the image. */
+    try {
+      const v = document.getElementById('hero-video');
+      if (v && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        v.removeAttribute('autoplay');
+        v.pause();
+        v.currentTime = 0;
+      }
+    } catch (e) { /* no matchMedia — leave it playing */ }
     let lit = 0;
     try {
       const stored = window.localStorage.getItem('memorial.candles.lit');
@@ -350,6 +363,9 @@ class Component extends DCLogic {
       driftCamera: this.props.driftCamera ?? true,
       // What the hall renders: the rack always stands there, five hundred
       // candles, and this many of them are alight.
+      heroCaption: HERO.caption,
+      heroCredit: HERO.credit,
+
       litInRoom,
       roomSize: ROOM_SIZE,
       cycleSeconds: this.props.cycleSeconds ?? 210,

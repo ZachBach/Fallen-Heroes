@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- React must load BEFORE support.js. The dc-runtime falls back to fetching
+     react, react-dom and @babel/standalone from unpkg.com, and its loader
+     short-circuits on `window.React && window.ReactDOM` — so vendoring them
+     here is what keeps this page from talking to a third party at all.
+     Babel is never needed because MemorialLight.js contains no JSX syntax
+     (see vendor/INTEGRITY.txt). -->
+<script src="./vendor/react.production.min.js"></script>
+<script src="./vendor/react-dom.production.min.js"></script>
+<!-- The import map lives here, not in the <helmet>. A helmet is injected at
+     render time, and the dc-runtime compiles the template twice (once from
+     the parsed DOM, once from a raw re-fetch of this file) — the two differ
+     by whitespace, so the helmet's dedupe key misses and the map is appended
+     a second time, which the browser rejects as a conflict. In <head> it is
+     parsed once, before anything can import a module. -->
+<script type="importmap">{"imports":{"three":"./vendor/three.webgpu.min.js","three/webgpu":"./vendor/three.webgpu.min.js","three/tsl":"./vendor/three.tsl.min.js"}}</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><script src="./image-slot.js"></script><link href="./vendor/fonts.css" rel="stylesheet"><style>
+body{margin:0;background:#0d0e10;-webkit-font-smoothing:antialiased}
+a{color:#C9A227;text-decoration:none}a:hover{color:#e0bb45}
+</style></helmet>
+
+<div style="background:#0d0e10;color:#F4F2EE;font-family:'Cormorant Garamond',Georgia,serif">
+
+  <nav style="position:sticky;top:0;z-index:20;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 26px;padding:18px 6vw;background:rgba(13,14,16,.96);border-bottom:1px solid rgba(255,255,255,.09)">
+    <span style="font:400 18px/1 'Cormorant Garamond',serif;letter-spacing:.02em">Вічна пам'ять</span>
+    <span style="font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#8a8478">Memorial Gallery</span>
+    <div style="flex:1"></div>
+    <a href="#hall" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.62)">Hall of light</a>
+    <a href="#portraits" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.62)">Portraits</a>
+    <a href="#names" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.62)">Names</a>
+    <a href="#objects" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.62)">Objects</a>
+    <a href="#visit" style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.62)">Visit</a>
+  </nav>
+
+  <section data-screen-label="01 Hero" style="display:flex;flex-direction:column;border-bottom:1px solid rgba(255,255,255,.1)">
+    <div style="position:relative;height:62vh;min-height:380px;overflow:hidden">
+      <image-slot id="memorial-hero" shape="rect" fit="cover" placeholder="Drop the hero photograph here — Ukrainian soldiers, men and women"></image-slot>
+      <div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(13,14,16,.5) 0%,rgba(13,14,16,0) 30%,rgba(13,14,16,.28) 72%,#0d0e10 100%)"></div>
+    </div>
+    <div style="padding:52px 6vw 84px;display:flex;flex-direction:column;gap:30px">
+      <div style="display:flex;align-items:center;gap:14px;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#C9A227">
+        <span style="width:44px;height:1px;background:#C9A227"></span>Permanent collection · Room 01
+      </div>
+      <h1 style="margin:0;font:300 clamp(46px,7vw,112px)/1 'Cormorant Garamond',serif;letter-spacing:-.02em;max-width:18ch;text-wrap:balance">Вічна пам'ять</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:24px 60px;align-items:baseline;max-width:1100px">
+        <p style="margin:0;font:400 clamp(20px,2vw,29px)/1.42 'Cormorant Garamond',serif;color:rgba(244,242,238,.84);max-width:24ch;text-wrap:pretty">Eternal memory to the fallen defenders of Ukraine — the men and women who stood.</p>
+        <p style="margin:0;font:400 12px/1.95 'IBM Plex Mono',monospace;letter-spacing:.05em;color:#8a8478;max-width:44ch;text-wrap:pretty">A permanent, non-commercial memorial. Every photograph, name, and object in these rooms is placed at the request of a family, a unit, or a community — and removed at their request.</p>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="02 Hall of light" id="hall" style="position:relative;min-height:100vh;display:flex;flex-direction:column;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);overflow:hidden">
+    <x-import component="MemorialLight" from="./MemorialLight.js" lit="{{ litInRoom }}" room-size="{{ roomSize }}" cycle-seconds="{{ cycleSeconds }}" gold="{{ goldAccent }}" drift="{{ driftCamera }}" on-ready="{{ onReady }}" hint-size="100%,100%" style="position:absolute;inset:0;z-index:0"></x-import>
+    <div style="position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(13,14,16,.86) 0%,rgba(13,14,16,.40) 22%,rgba(13,14,16,.04) 46%,rgba(13,14,16,.20) 74%,rgba(13,14,16,.88) 100%)"></div>
+
+    <div style="position:relative;z-index:2;padding:96px 6vw 0;display:flex;flex-direction:column;gap:26px;max-width:760px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Room 02 — Hall of light</div>
+      <h2 style="margin:0;font:300 clamp(34px,4.4vw,64px)/1.06 'Cormorant Garamond',serif;letter-spacing:-.015em;text-wrap:balance">One flame for each name we have been given.</h2>
+      <p style="margin:0;font:400 clamp(17px,1.5vw,21px)/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.74);max-width:52ch;text-wrap:pretty">The hall is rendered live — a floor of stone, a field of candles, and the embers that rise from them. Nothing here is a photograph of a real place. It is a room built to be quiet in.</p>
+    </div>
+
+    <div style="position:relative;z-index:2;margin-top:auto;padding:34px 6vw 40px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:28px 48px;background:linear-gradient(180deg,rgba(13,14,16,0) 0%,rgba(11,12,14,.86) 30%,rgba(11,12,14,.97) 100%);border-top:1px solid rgba(255,255,255,.07)">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#8a8478">Candles lit by visitors</div>
+        <div style="font:300 clamp(40px,5vw,72px)/1 'Cormorant Garamond',serif;font-variant-numeric:lining-nums tabular-nums;color:#C9A227">{{ litDisplay }}</div>
+      </div>
+      <button type="button" onClick="{{ onLight }}" style="background:transparent;border:1px solid rgba(201,162,39,.55);color:#C9A227;padding:17px 26px;font:500 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;cursor:pointer" style-hover="border-color:#C9A227;background:rgba(201,162,39,.08)">Light a candle</button>
+      <p style="margin:0;font:400 11px/1.9 'IBM Plex Mono',monospace;color:rgba(244,242,238,.4);max-width:40ch;text-wrap:pretty">{{ hallNote }}</p>
+      <div style="flex:1"></div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-end">
+        <div style="display:flex;align-items:center;gap:14px">
+          <button type="button" onClick="{{ onPrevRoom }}" style="background:transparent;border:1px solid rgba(255,255,255,.16);color:rgba(244,242,238,.72);width:30px;height:30px;font:400 14px/1 'IBM Plex Mono',monospace;cursor:pointer" style-hover="border-color:rgba(201,162,39,.6);color:#C9A227">‹</button>
+          <div style="display:flex;flex-direction:column;gap:4px;align-items:center;min-width:104px">
+            <span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:rgba(244,242,238,.72)">{{ roomLabel }}</span>
+            <span style="font:400 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:rgba(244,242,238,.34)">{{ roomFill }}</span>
+          </div>
+          <button type="button" onClick="{{ onNextRoom }}" style="background:transparent;border:1px solid rgba(255,255,255,.16);color:rgba(244,242,238,.72);width:30px;height:30px;font:400 14px/1 'IBM Plex Mono',monospace;cursor:pointer" style-hover="border-color:rgba(201,162,39,.6);color:#C9A227">›</button>
+        </div>
+        <div style="font:500 10px/1.9 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:rgba(244,242,238,.3);text-align:right">{{ renderNote }}</div>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen-label="03 Portraits" id="portraits" style="padding:104px 6vw;border-bottom:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:52px">
+    <div style="display:flex;flex-wrap:wrap;gap:26px 60px;align-items:flex-end">
+      <div style="flex:1 1 420px;max-width:760px;display:flex;flex-direction:column;gap:22px">
+        <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Room 03 — Portraits</div>
+        <h2 style="margin:0;font:300 clamp(34px,4.4vw,64px)/1.06 'Cormorant Garamond',serif;letter-spacing:-.015em;text-wrap:balance">Faces, hung at eye level.</h2>
+        <p style="margin:0;font:400 clamp(17px,1.5vw,21px)/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.74);max-width:56ch;text-wrap:pretty">Each plate below holds one photograph and one plaque. The gallery does not write the plaque — the family does. Frames stay empty until a family fills them, and an empty frame is part of the exhibition.</p>
+      </div>
+      <a href="#submit" style="font:500 11px/1.2 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#C9A227;border-bottom:1px solid rgba(201,162,39,.5);padding-bottom:8px;white-space:nowrap">Submit a portrait</a>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:28px">
+      <sc-for list="{{ frames }}" as="frame" hint-placeholder-count="8">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:16px">
+          <div style="position:relative;aspect-ratio:4/5;background:#121417;border:1px solid rgba(255,255,255,.1)">
+            <image-slot id="{{ frame.slotId }}" shape="rect" fit="cover" placeholder="{{ frame.placeholder }}"></image-slot>
+          </div>
+          <figcaption style="display:flex;flex-direction:column;gap:8px;border-top:1px solid rgba(255,255,255,.12);padding-top:14px">
+            <span style="font:400 19px/1.25 'Cormorant Garamond',serif;color:rgba(244,242,238,.92)">{{ frame.nameLine }}</span>
+            <span style="font:400 10.5px/1.7 'IBM Plex Mono',monospace;letter-spacing:.09em;color:#8a8478">{{ frame.metaLine }}</span>
+          </figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section data-screen-label="04 Names" id="names" style="padding:104px 6vw;border-bottom:1px solid rgba(255,255,255,.1);background:#0b0c0e;display:flex;flex-direction:column;gap:52px">
+    <div style="display:flex;flex-wrap:wrap;gap:26px 60px;align-items:flex-end">
+      <div style="flex:1 1 420px;max-width:760px;display:flex;flex-direction:column;gap:22px">
+        <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Room 04 — Wall of names</div>
+        <h2 style="margin:0;font:300 clamp(34px,4.4vw,64px)/1.06 'Cormorant Garamond',serif;letter-spacing:-.015em;text-wrap:balance">The wall is engraved, never printed.</h2>
+        <p style="margin:0;font:400 clamp(17px,1.5vw,21px)/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.74);max-width:56ch;text-wrap:pretty">Names are set only from documentation a family or unit provides. The gallery publishes no name it cannot source, and it invents none. Below is the wall as it stands: the index, and the plates awaiting their engraving.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px;min-width:200px">
+        <span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#8a8478">Plates engraved</span>
+        <span style="font:300 40px/1 'Cormorant Garamond',serif;font-variant-numeric:lining-nums tabular-nums;color:#C9A227">{{ engraved }}</span>
+        <span style="font:400 10.5px/1.7 'IBM Plex Mono',monospace;color:rgba(244,242,238,.4)">of {{ plateTotal }} on this wall</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:7px">
+      <sc-for list="{{ index }}" as="letter" hint-placeholder-count="33">
+        <span style="font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:rgba(244,242,238,.5);border:1px solid rgba(255,255,255,.14);padding:9px 11px;white-space:nowrap">{{ letter }}</span>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.09)">
+      <sc-for list="{{ plates }}" as="plate" hint-placeholder-count="24">
+        <div style="background:#0d0e10;padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-height:104px">
+          <span style="font:500 9.5px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:rgba(244,242,238,.28)">{{ plate.ref }}</span>
+          <span style="font:400 17px/1.3 'Cormorant Garamond',serif;color:{{ plate.color }}">{{ plate.line }}</span>
+          <span style="font:400 10px/1.6 'IBM Plex Mono',monospace;letter-spacing:.08em;color:rgba(244,242,238,.34)">{{ plate.note }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section data-screen-label="05 Objects" id="objects" style="padding:104px 6vw;border-bottom:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:52px">
+    <div style="display:flex;flex-direction:column;gap:22px;max-width:760px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Room 05 — Objects</div>
+      <h2 style="margin:0;font:300 clamp(34px,4.4vw,64px)/1.06 'Cormorant Garamond',serif;letter-spacing:-.015em;text-wrap:balance">What they carried.</h2>
+      <p style="margin:0;font:400 clamp(17px,1.5vw,21px)/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.74);max-width:56ch;text-wrap:pretty">Objects are shown on a plain field, lit flat, at true scale where scale is known. Conservation notes travel with each accession and are shown in full on request.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px">
+      <sc-for list="{{ objects }}" as="object" hint-placeholder-count="3">
+        <figure style="margin:0;display:flex;flex-direction:column;gap:16px">
+          <div style="position:relative;aspect-ratio:1;background:#121417;border:1px solid rgba(255,255,255,.1)">
+            <image-slot id="{{ object.slotId }}" shape="rect" fit="contain" placeholder="{{ object.placeholder }}"></image-slot>
+          </div>
+          <figcaption style="display:flex;flex-direction:column;gap:8px;border-top:1px solid rgba(255,255,255,.12);padding-top:14px">
+            <span style="font:400 19px/1.25 'Cormorant Garamond',serif;color:rgba(244,242,238,.92)">{{ object.title }}</span>
+            <span style="font:400 10.5px/1.75 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#8a8478">{{ object.meta }}</span>
+          </figcaption>
+        </figure>
+      </sc-for>
+    </div>
+  </section>
+
+  <section data-screen-label="06 Dedication" style="padding:120px 6vw;border-bottom:1px solid rgba(255,255,255,.1);background:#0b0c0e;display:flex;justify-content:center">
+    <blockquote style="margin:0;max-width:900px;display:flex;flex-direction:column;gap:30px;text-align:center;align-items:center">
+      <span style="width:52px;height:1px;background:#C9A227"></span>
+      <p style="margin:0;font:300 clamp(26px,3.4vw,46px)/1.34 'Cormorant Garamond',serif;letter-spacing:-.01em;text-wrap:balance">They were somebody's daughter, somebody's son, somebody's whole world. This gallery keeps the smallest facts about them, because the smallest facts are what a person actually is.</p>
+      <span style="font:500 10px/1.9 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:#8a8478">Curatorial statement · founding dedication</span>
+    </blockquote>
+  </section>
+
+  <section data-screen-label="07 Submit" id="submit" style="padding:104px 6vw;border-bottom:1px solid rgba(255,255,255,.1);display:flex;flex-wrap:wrap;gap:44px 64px">
+    <div style="flex:1 1 380px;max-width:620px;display:flex;flex-direction:column;gap:22px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Room 06 — Accession</div>
+      <h2 style="margin:0;font:300 clamp(30px,3.6vw,52px)/1.08 'Cormorant Garamond',serif;letter-spacing:-.015em;text-wrap:balance">Adding a name, a face, or an object.</h2>
+      <p style="margin:0;font:400 17px/1.62 'Cormorant Garamond',serif;color:rgba(244,242,238,.74);max-width:52ch;text-wrap:pretty">Families and units hold the record. The gallery holds the room. A curator reads every submission, confirms the documentation, and writes nothing the family has not approved.</p>
+    </div>
+    <div style="flex:1 1 380px;max-width:560px;display:flex;flex-direction:column;gap:0;border-top:1px solid rgba(255,255,255,.12)">
+      <sc-for list="{{ steps }}" as="step" hint-placeholder-count="4">
+        <div style="display:flex;flex-wrap:wrap;gap:8px 22px;padding:20px 0;border-bottom:1px solid rgba(255,255,255,.12)">
+          <span style="font:500 10.5px/1.6 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#C9A227;width:26px;flex:none">{{ step.n }}</span>
+          <span style="font:400 18px/1.35 'Cormorant Garamond',serif;flex:1 1 180px;color:rgba(244,242,238,.92)">{{ step.title }}</span>
+          <span style="font:400 11px/1.8 'IBM Plex Mono',monospace;color:#8a8478;flex:1 1 220px">{{ step.detail }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section data-screen-label="08 Visit" id="visit" style="padding:104px 6vw;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:44px">
+    <div style="display:flex;flex-direction:column;gap:16px;border-top:1px solid rgba(255,255,255,.14);padding-top:20px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Hours</div>
+      <p style="margin:0;font:400 18px/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.86)">Tuesday — Sunday, 10:00 to 18:00<br>Thursday until 21:00<br>Closed Mondays</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;border-top:1px solid rgba(255,255,255,.14);padding-top:20px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Admission</div>
+      <p style="margin:0;font:400 18px/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.86)">Free, always.<br>No ticket, no donation box in the halls.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;border-top:1px solid rgba(255,255,255,.14);padding-top:20px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Access</div>
+      <p style="margin:0;font:400 18px/1.6 'Cormorant Garamond',serif;color:rgba(244,242,238,.86)">Step-free throughout.<br>Plaques in Ukrainian and English.<br>Quiet room off the Hall of light.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;border-top:1px solid rgba(255,255,255,.14);padding-top:20px">
+      <div style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#8a8478">Contact</div>
+      <p style="margin:0;font:400 12px/1.95 'IBM Plex Mono',monospace;color:rgba(244,242,238,.72)">Address, telephone, and the curator's line are set by the hosting institution — placeholders left deliberately blank.</p>
+    </div>
+  </section>
+
+  <footer style="padding:52px 6vw 76px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-wrap:wrap;gap:20px 46px;align-items:baseline">
+    <span style="font:400 17px/1 'Cormorant Garamond',serif">Вічна пам'ять</span>
+    <span style="font:400 11px/1.9 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#8a8478;max-width:60ch;text-wrap:pretty">No photograph in this gallery is generated. Portraits, names, and objects are supplied by families, units, and communities, and are withdrawn on request. The Hall of light is a rendered room and is labelled as such.</span>
+    <div style="flex:1"></div>
+    <span style="font:500 10px/1.9 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:rgba(244,242,238,.34)">Slava Ukraini · Героям слава</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;goldAccent&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#C9A227&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;#C9A227&quot;, &quot;#F4F2EE&quot;, &quot;#FFC93C&quot;, &quot;#8FA6C4&quot;], &quot;section&quot;: &quot;Hall of light&quot;}, &quot;roomSize&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 500, &quot;min&quot;: 100, &quot;max&quot;: 1000, &quot;step&quot;: 50, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Hall of light&quot;}, &quot;cycleSeconds&quot;: {&quot;editor&quot;: &quot;int&quot;, &quot;default&quot;: 210, &quot;min&quot;: 30, &quot;max&quot;: 900, &quot;step&quot;: 30, &quot;tsType&quot;: &quot;number&quot;, &quot;section&quot;: &quot;Hall of light&quot;}, &quot;driftCamera&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Hall of light&quot;}}">
+const PORTRAIT_FRAMES = 8;
+const PLATES = 24;
+// Must match ROOM_SIZE in MemorialLight.js. A room holds this many candles;
+// when it fills, the next candle opens the next room and only the room being
+// looked at is ever built or drawn. That is what keeps the particle budget
+// spent on 500 wicks instead of spread thin across thousands.
+const ROOM_SIZE = 500;
+const INDEX = 'А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ю Я'.split(' ');
+const OBJECTS = [
+  { slotId: 'obj-1', placeholder: 'Object photograph — flat field, true scale', title: 'Field notebook', meta: 'Accession pending · conservation note on request' },
+  { slotId: 'obj-2', placeholder: 'Object photograph — flat field, true scale', title: 'Unit patch', meta: 'Accession pending · returned to family on request' },
+  { slotId: 'obj-3', placeholder: 'Object photograph — flat field, true scale', title: 'Letter home', meta: 'Accession pending · displayed only with consent' },
+];
+const STEPS = [
+  { n: '01', title: 'Write to the curator', detail: 'One message. No form, no account.' },
+  { n: '02', title: 'Send what you have', detail: 'A photograph, a name, a date, a unit — any part of it.' },
+  { n: '03', title: 'Read the draft plaque', detail: 'Nothing is hung until you approve the wording.' },
+  { n: '04', title: 'It stays as long as you want', detail: 'Withdrawal takes one message and no explanation.' },
+];
+
+class Component extends DCLogic {
+  // `lit` is the total across every room; `room` is the one on screen. There
+  // is always one room with space in it, so a visitor always has somewhere to
+  // light a candle.
+  state = { lit: 0, room: 0, ready: false, backend: null };
+
+  componentDidMount() {
+    let lit = 0;
+    try {
+      const stored = window.localStorage.getItem('memorial.candles.lit');
+      if (stored !== null) lit = Math.max(0, parseInt(stored, 10) || 0);
+    } catch (e) { /* storage unavailable — the room still works */ }
+    // Open on the room the next candle would go in, so the button is live the
+    // moment the page settles.
+    this.setState({ lit, room: Math.floor(lit / ROOM_SIZE), ready: true });
+  }
+
+  renderVals() {
+    const lit = this.state.lit;
+    // Always one more room than is completely full, so there is always an
+    // unlit candle waiting.
+    const roomsTotal = Math.floor(lit / ROOM_SIZE) + 1;
+    const room = Math.min(this.state.room, roomsTotal - 1);
+    const litInRoom = Math.max(0, Math.min(ROOM_SIZE, lit - room * ROOM_SIZE));
+    const viewingFull = litInRoom >= ROOM_SIZE;
+
+    const frames = Array.from({ length: PORTRAIT_FRAMES }, (_, i) => ({
+      slotId: 'portrait-' + (i + 1),
+      placeholder: 'Portrait ' + String(i + 1).padStart(2, '0') + ' — supplied by family',
+      nameLine: '—',
+      metaLine: 'Name · unit · dates — awaiting family submission',
+    }));
+
+    const plates = Array.from({ length: PLATES }, (_, i) => ({
+      ref: 'IV·' + String(i + 1).padStart(3, '0'),
+      line: '—',
+      note: 'awaiting documentation',
+      color: 'rgba(244,242,238,.55)',
+    }));
+
+    return {
+      goldAccent: this.props.goldAccent ?? '#C9A227',
+      driftCamera: this.props.driftCamera ?? true,
+      // What the hall renders: the rack always stands there, five hundred
+      // candles, and this many of them are alight.
+      litInRoom,
+      roomSize: ROOM_SIZE,
+      cycleSeconds: this.props.cycleSeconds ?? 210,
+
+      litDisplay: this.state.ready ? String(lit).padStart(3, '0') : '···',
+      roomLabel: 'Room ' + (room + 1) + ' of ' + roomsTotal,
+      roomFill: litInRoom + ' / ' + ROOM_SIZE + ' lit',
+      canPrev: room > 0,
+      canNext: room < roomsTotal - 1,
+      hallNote: lit === 0
+        ? 'Every candle here is unlit. Lighting one puts a flame in front of you, and it is kept on your device only — nothing is sent anywhere.'
+        : viewingFull
+          ? 'This room is full. The next candle opens the next room — your flames stay where you left them.'
+          : 'Your flames are still burning, in the same places. Kept on your device only — nothing is sent anywhere.',
+      renderNote: this.state.backend
+        ? 'Rendered live · ' + this.state.backend + ' · TSL node materials'
+        : 'Rendered live · WebGPU with WebGL2 fallback · TSL node materials',
+
+      // The hall reports which backend it actually got, rather than the page
+      // claiming one. A memorial that states things it has not checked is
+      // the wrong kind of page.
+      onReady: ({ backend }) => {
+        if (backend !== this.state.backend) this.setState({ backend });
+      },
+
+      engraved: '000',
+      plateTotal: String(PLATES),
+      index: INDEX,
+      frames,
+      plates,
+      objects: OBJECTS,
+      steps: STEPS,
+
+      onLight: () => {
+        const next = this.state.lit + 1;
+        // Light into the room being looked at. If that fills it, walk forward
+        // into the next one rather than leaving the visitor at a full rack.
+        const nextRoom = next > (room + 1) * ROOM_SIZE - 1 && litInRoom >= ROOM_SIZE - 1
+          ? room + 1 : room;
+        this.setState({ lit: next, room: nextRoom });
+        try { window.localStorage.setItem('memorial.candles.lit', String(next)); } catch (e) { /* ignore */ }
+      },
+      onPrevRoom: () => { if (room > 0) this.setState({ room: room - 1 }); },
+      onNextRoom: () => { if (room < roomsTotal - 1) this.setState({ room: room + 1 }); },
+    };
+  }
+}
+</script>
+</body>
+</html>

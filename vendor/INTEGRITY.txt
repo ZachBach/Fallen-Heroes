@@ -1,0 +1,121 @@
+Vendored three.js r0.184.0 and Google Fonts — provenance record
+===============================================================
+
+Why these files are here at all
+-------------------------------
+
+This page makes no external request. Before vendoring it fetched three.js
+from cdn.jsdelivr.net and two font families from fonts.googleapis.com /
+fonts.gstatic.com, which handed the visitor's IP to two third parties on
+every load. The people who open a memorial to Ukraine's fallen should not
+have their visit logged by anyone, and fonts.googleapis.com is not reliably
+reachable from every region this page is meant to be read in.
+
+This follows the same pattern as PulseMask's vendor/ directory — flat
+vendored files, a fonts.css of rewritten @font-face rules, per-family OFL
+text, and this record. It diverges in one place, documented below: the
+three.js builds here are minified.
+
+three.js
+--------
+
+The import map maps three, three/webgpu and three/tsl at ./vendor/. Note
+that three.tsl.min.js imports the BARE specifier 'three/webgpu' and
+three.webgpu.min.js imports './three.core.min.js' relatively — so all three
+files must stay side by side and the import map must keep the three/webgpu
+entry.
+
+MINIFIED, unlike PulseMask's vendor/ which ships the readable builds. That
+is a deliberate divergence, not drift. The readable trio is 3.5 MB against
+1.0 MB minified, and this page is opened by families on connections inside
+Ukraine; 2.5 MB is real seconds there. Nobody steps through three.js
+internals on a deployed memorial, and the re-verification recipe below works
+the same either way. The MIT notice survives minification intact at the top
+of all three files, which is what redistribution actually requires.
+
+To confirm a vendored file still matches the authentic upstream release:
+
+    curl -sL https://unpkg.com/three@0.184.0/build/three.webgpu.min.js \
+      | openssl dgst -sha384 -binary | openssl base64 -A
+
+sha384, base64 — each verified byte-identical against unpkg on 2026-09-06:
+
+  three.webgpu.min.js  yxymeQ3BZZOUzVptnSOa6Vv/uRqq4cZ3+84ThIL7QpA1xwz0LHhZOS7vdKk6l6ta
+    upstream: build/three.webgpu.min.js            (637561 bytes)
+  three.core.min.js    /2vXInuUL2LKgd3n86c5RIzG+YC7vk3zYPTknaEkF2H2sauHtaOrS8swZ+MURxU6
+    upstream: build/three.core.min.js              (384222 bytes)
+    (relative import of three.webgpu.min.js)
+  three.tsl.min.js     7MYTCVp8lJhaboioR5rqE3JgHte9xBWv2P807sIlrOKRT1mXXy67vIOVtWT3djU5
+    upstream: build/three.tsl.min.js               (23265 bytes)
+  OrbitControls.js     4rziNxOBZKQ69i+w+f89KJ55TCYquwchVbByQwmaOeIOXdOU2PLDn3kOfXHwIJC9
+    upstream: examples/jsm/controls/OrbitControls.js   (40504 bytes)
+    Not minified upstream — three ships examples/jsm as source only. Imports
+    the bare specifier 'three', so it resolves through the same import map.
+
+Line endings: .gitattributes marks vendor/** as `-text`, so git performs no
+CRLF conversion in either direction. Without that, a clone on Windows would
+rewrite the text files here and every hash above would stop matching — the
+record would be quietly wrong through no fault of the files.
+
+For reference, the readable builds this replaced — should you ever want to
+swap back for debugging, these are PulseMask's own verified hashes and the
+files are still in helixPulse/vendor/:
+
+  three.webgpu.js   vatRh9vQy/B/ECoJSF7P/Jg9rF6KVuG/ovU+3Wp/BUaCcpR0DM+a4zCEbQ8Y/RFK
+  three.core.js     dw2ooPewaEIrAgl6oFDBmmBWCE9oW9LxRGcfwZ0hLvEprzo202wXl7vCYHRlSnOT
+  three.tsl.js      dqftyqccaI6qYFdGtJtugSSe4YKncDgGHttpZJr+lR/vSq18VR5ubqlzEHdGLdJ1
+
+Swapping back means renaming three files AND the three entries in the import
+map in Memorial Gallery.dc.html. Then run `node verify.mjs`.
+
+There is no `integrity` block in the import map, and that is not a
+downgrade: subresource integrity guards against a THIRD PARTY serving you
+different bytes. These files are same-origin now. There is no third party
+left to guard against, and anyone who can alter these files can equally
+alter the hashes next to them. This record replaces it.
+
+three.js is MIT licensed, (c) 2010-2026 three.js authors. Redistributing it
+— which vendoring is — requires the copyright and permission notice to
+travel with it; the notice is at the top of all three .min.js files,
+intact and unmodified. Minifiers preserve @license blocks precisely so this
+stays true.
+
+One line in the READABLE build looks alarming and is not. three.webgpu.js
+contains
+
+    import 'https://greggman.github.io/.../webgpu-check-redundant-state-setting.js';
+
+inside a `/*// debugger tools ... //*/` comment block. It is dead code, it
+issues no request, and minification strips it entirely — three.webgpu.min.js
+contains no reference to that host at all (checked). Do not "fix" it by
+editing either file; that would break the byte-for-byte hash match above. If
+a future three.js release un-comments it, that is the moment to care.
+
+Fonts
+-----
+
+vendor/fonts/ holds Cormorant Garamond (300, 400, 500, 300 italic) and
+IBM Plex Mono (400, 500), in the latin, latin-ext, cyrillic and
+cyrillic-ext subsets — 24 files, ~492 KB total. Cyrillic is not optional
+here: the page is Ukrainian.
+
+Downloaded from the Google Fonts CSS2 API with a modern-Chrome User-Agent
+(which is what selects woff2 over the older formats), then rewritten to
+relative URLs in fonts.css. Every @font-face keeps its upstream
+unicode-range, so a browser still downloads only the subsets a given
+visitor actually needs to render the page — vendoring costs no extra
+bandwidth over the Google-hosted version.
+
+Both families are SIL Open Font License 1.1. The licence text ships beside
+them as fonts/OFL-Cormorant.txt and fonts/OFL-IBMPlex.txt, as the OFL
+requires.
+
+To re-fetch a face and confirm it matches upstream, take the URL for the
+relevant subset out of:
+
+    curl -sL -A "Mozilla/5.0 ... Chrome/131.0.0.0 ..." \
+      "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+
+Google re-cuts these files on their own schedule (the URLs carry a version
+segment, currently v21 for Cormorant Garamond), so a byte difference after
+an upstream re-cut is expected and is not evidence of tampering.

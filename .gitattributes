@@ -1,0 +1,15 @@
+# Line endings are normalised to LF everywhere...
+* text=auto eol=lf
+
+# ...except under vendor/, which is left completely alone.
+#
+# Every file in vendor/ has its sha384 recorded in vendor/INTEGRITY.txt and was
+# checked byte-identical against upstream. Git's autocrlf would rewrite the
+# text ones to CRLF on checkout under Windows, which changes their bytes and
+# breaks that match — the provenance record would then be quietly wrong for
+# anyone who cloned on the wrong platform. `-text` disables conversion in both
+# directions so what is committed is exactly what is served.
+vendor/** -text
+
+*.woff2 binary
+*.png binary

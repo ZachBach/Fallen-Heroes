@@ -1,0 +1,96 @@
+Fallen-Heroes — Вічна пам'ять
+Copyright 2026 Zachary Auerbach
+
+This product includes software developed for a memorial to the fallen
+defenders of Ukraine.
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+Under section 4(d) of that licence, this file travels with every copy and
+every derivative work. It is where the parts that are NOT the software are
+set out.
+
+
+WHAT THE LICENCE COVERS
+-----------------------
+
+The Apache 2.0 grant covers the SOFTWARE in this repository: the renderer
+(MemorialLight.js), the page and its logic (index.html), the verifier
+(verify.mjs), and the shaders, geometry and layout code within them.
+
+Take it, fork it, learn from it, use it in your own work, commercially or
+not, without asking anyone. That is deliberate. The candle field, the TSL
+compute particle system and the stained-glass shaders are ordinary graphics
+work and there is no reason to hoard them.
+
+
+WHAT THE LICENCE DOES NOT COVER
+-------------------------------
+
+1. THE MEMORIAL CONTENT. Photographs, names, dates, units, plaque text,
+   objects and any other material placed in this memorial by a family, a
+   unit or a community are NOT licensed under Apache 2.0 and are not
+   licensed at all by this file. They are placed at the request of the
+   people they belong to, and are withdrawn at their request. They belong
+   to those people, not to this repository, and copying them elsewhere is
+   not yours or the maintainer's to authorise.
+
+2. THE NAME AND IDENTITY. Section 6 of the Apache Licence grants no rights
+   in trade names, trademarks or product names. "Fallen-Heroes",
+   "Вічна пам'ять" as used here, and the visual identity of this memorial
+   are not licensed. You may build whatever you like with the code. You may
+   not present the result as being this memorial, or as endorsed by or
+   connected with it.
+
+3. THE CURATORIAL TEXT. The written text of the rooms — the dedication, the
+   accession terms, the curatorial statements — is not licensed for reuse.
+
+For permission on any of the above, open an issue at
+github.com/ZachBach/Fallen-Heroes, or contact the copyright holder through
+that account.
+
+
+ON MODIFIED COPIES
+------------------
+
+Section 4(b) of the licence requires any modified file to carry prominent
+notice that it was changed. That obligation is not decoration here. If you
+alter this memorial and publish the result, say so plainly, and do not let
+it be mistaken for the original.
+
+
+A NOTE ON WHO MAY USE THIS
+--------------------------
+
+This licence discriminates against no person, group, nationality or field
+of endeavour, and it will not be amended to do so.
+
+That is not indifference about how it might be misused. It is that a
+licence is the wrong instrument: a term restricting use by nationality
+would be unenforceable in practice, would fail the Open Source Definition,
+and would fall hardest on Russians who oppose this war and had no say in
+it. The people this memorial is for were not defending a rule about who is
+allowed to read source code.
+
+Vandalism, impersonation and defacement are handled where they actually
+happen — repository access control, platform moderation and, where a fork
+passes itself off as this memorial, section 6 above. Not here.
+
+
+THIRD-PARTY COMPONENTS
+----------------------
+
+Files under vendor/ are third-party and carry their own licences, which
+ship beside them:
+
+  three.js, OrbitControls  MIT   (c) 2010-2026 three.js authors
+  React, ReactDOM          MIT   (c) Meta Platforms, Inc. and affiliates
+  Cormorant Garamond       SIL Open Font License 1.1
+                                 vendor/fonts/OFL-Cormorant.txt
+  IBM Plex Mono            SIL Open Font License 1.1
+                                 vendor/fonts/OFL-IBMPlex.txt
+
+support.js and image-slot.js are generated scaffolding from the tool this
+page was designed in and are reproduced unmodified.
+
+Provenance and sha384 for every vendored file: vendor/INTEGRITY.txt

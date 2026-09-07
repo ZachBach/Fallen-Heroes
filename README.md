@@ -24,6 +24,8 @@ node verify.mjs                # headless gate, both GPU backends
 | `vendor/`           | three.js, React, OrbitControls, fonts — see `INTEGRITY.txt`  |
 | `verify.mjs`        | headless gate, both backends                                 |
 | `.nojekyll`         | stops GitHub Pages running the page through Jekyll           |
+| `LICENSE`           | Apache License 2.0 — covers the software                     |
+| `NOTICE`            | what the licence does *not* cover; travels with every copy   |
 
 2.1 MB total: 1.0 MB three.js, 552 KB fonts, 144 KB React, the rest page and
 component code.
@@ -286,11 +288,58 @@ telephone and curator's line under Visit, which the hosting institution fills.
 
 ## Licensing
 
-Third-party components carry their own licences and the texts ship with them:
-three.js and OrbitControls are MIT (notice at the top of each vendored file),
-React and ReactDOM are MIT, and both font families are SIL OFL 1.1
-(`vendor/fonts/OFL-Cormorant.txt`, `vendor/fonts/OFL-IBMPlex.txt`).
+**The software is Apache License 2.0 — free for anyone to use, fork, learn
+from and build on, commercially or not, without asking.** See [LICENSE](LICENSE).
+The candle field, the TSL compute particle system and the stained-glass shaders
+are ordinary graphics work and there is no reason to hoard them.
 
-**The project itself has no LICENSE file.** That is a deliberate blank, not an
-oversight — worth a decision now the repo is public, since a memorial others
-may want to host or adapt is exactly the case where the licence matters.
+**The memorial is not.** [NOTICE](NOTICE) sets out what the grant does not
+reach, and Apache §4(d) makes that file travel with every copy and every
+derivative:
+
+- **Memorial content** — photographs, names, dates, units, plaque text,
+  objects. Placed at the request of families and units, withdrawn at their
+  request. Not the maintainer's to sub-license.
+- **The name and identity.** Apache §6 grants no rights in names or marks.
+  Build anything you like with the code; do not present it as *this* memorial.
+- **The curatorial text** of the rooms.
+
+Apache rather than MIT for two specific reasons, both of which matter for a
+memorial: §6 withholds the name, so a hostile fork cannot pass itself off as
+this one; and §4(b) requires modified files to carry prominent notice that they
+were changed, so a defaced copy is obliged to say it has been altered.
+
+The licence discriminates against no person, group or nationality and will not
+be amended to. A licence is the wrong instrument for that — see the note in
+NOTICE, and *Keeping this from being defaced* below for the mechanisms that
+actually work.
+
+Third-party components under `vendor/` carry their own licences, shipped
+beside them: three.js and OrbitControls MIT, React and ReactDOM MIT, and both
+font families SIL OFL 1.1.
+
+## Keeping this from being defaced
+
+A licence governs copying. It does not govern who can edit your repository, and
+it will not stop vandalism — that is access control and platform moderation,
+and it is configured on GitHub, not in a text file.
+
+For a public memorial repo, in rough order of value:
+
+1. **Branch protection on `main`.** Pages deploys from `main`, so protecting
+   that branch protects the live site. Require a pull request, block force
+   pushes and deletions.
+2. **Interaction limits** — Settings → Moderation → Interaction limits.
+   Restrict to prior contributors or existing users. This is the switch that
+   actually stops drive-by comment spam, and it can be set permanently.
+3. **Turn off what you are not using** — Wiki, Projects, and Discussions.
+   Fewer surfaces to moderate. Consider whether Issues earns its keep.
+4. **Require approval for all outside contributors' workflow runs**, so a
+   hostile PR cannot execute anything.
+5. **Report abuse to GitHub** for defacing forks, and use §6 of the licence
+   where a fork trades on the name.
+
+One thing to be clear-eyed about: **forking of a public repo cannot be
+disabled** on a personal account. Anyone can take a copy. What you control is
+that a copy may not carry this memorial's name, and must declare that it was
+changed.

@@ -1511,6 +1511,189 @@ function MemorialLight({
         }
       }
 
+      /* ========================================================= STATUES */
+      /* Michael at the crossing, a wolf and a dragon flanking him.
+       *
+       * These are real solids, not the flat silhouettes the shields use. The
+       * orbit goes all the way round, and a cutout standing in the middle of
+       * the nave reads as painted cardboard the instant you pass it. So: a
+       * robe is a profile of revolution — the same lathe trick as the candle
+       * wax — with head, wings, sword and beast built from solids on top.
+       *
+       * The beasts are deliberately blocky. Quadrupeds do not lathe, and
+       * carved stone animals on a plinth ARE blocky; the stylisation is what
+       * the material would give you anyway. */
+      const statueMat = new THREE.MeshStandardNodeMaterial({ roughness: 0.74, metalness: 0.0 });
+      {
+        const p = positionWorld;
+        const grain = mx_noise_float(p.mul(2.6)).mul(0.5).add(0.5);
+        const fine = mx_noise_float(p.mul(14.0)).mul(0.5).add(0.5);
+        // Pale limestone, warmer than the walls so the figures lift off them.
+        const base = mix(vec3(0.200, 0.190, 0.170), vec3(0.278, 0.265, 0.238), grain);
+        // Candlelight reaches the lower half and dies out going up, which is
+        // what actually happens to anything standing over a rack of candles.
+        const fromBelow = oneMinus(smoothstep(float(0.4), float(6.0), p.y)).mul(0.7);
+        statueMat.colorNode = base.add(fine.sub(0.5).mul(0.03))
+          .add(goldVec().mul(fromBelow.mul(0.30)))
+          .mul(uDay.mul(0.34).add(0.72));
+        statueMat.roughnessNode = clamp(fine.mul(0.22).add(0.68), float(0.3), float(1));
+        statueMat.emissiveNode = goldVec().mul(fromBelow.mul(0.05));
+      }
+
+      const statues = new THREE.Group();
+      church.add(statues);
+      const part = (geo, x, y, z, rot, scl) => {
+        const m = new THREE.Mesh(geo, statueMat);
+        m.position.set(x, y, z);
+        if (rot) m.rotation.set(rot[0], rot[1], rot[2]);
+        if (scl) m.scale.set(scl[0], scl[1], scl[2]);
+        statues.add(m);
+        return m;
+      };
+      const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+      const ball = (r) => new THREE.SphereGeometry(r, 18, 12);
+
+      // Plinths. Sunk below their step, for the same z-fighting reason as
+      // everything else that meets a surface.
+      const plinth = (x, y, z, w, h) => {
+        part(box(w, h + 0.5, w), x, y + h / 2 - 0.25, z);
+        part(box(w * 1.18, 0.18, w * 1.18), x, y + h, z);      // cap moulding
+      };
+
+      const DAIS_TOP = 0.68, STEP_TOP = 0.34;
+      const MZ = ALTAR_Z + 1.4;        // Michael, just forward of the altar
+
+      /* -------- Michael */
+      {
+        const H = 1.7;                                  // plinth height
+        plinth(0, DAIS_TOP, MZ, 2.5, H);
+        const base = DAIS_TOP + H + 0.09;
+
+        // Robe: hem wide, drawn in to the shoulders.
+        /* Flared hem, drawn in at the waist, out again across the chest. A
+         * straight taper lathes into a traffic cone — the waist is the single
+         * profile point that makes it read as a figure under cloth. */
+        const robe = [
+          [0.00, 0.00], [0.90, 0.00], [0.96, 0.035], [0.88, 0.14], [0.70, 0.34],
+          [0.58, 0.50], [0.54, 0.60], [0.58, 0.70], [0.60, 0.80],
+          [0.54, 0.90], [0.40, 0.97], [0.00, 1.00],
+        ].map(([x, y]) => new THREE.Vector2(x * 1.16, y * 3.7));
+        part(new THREE.LatheGeometry(robe, 24), 0, base, MZ);
+
+        const shoulder = base + 3.7;
+        part(ball(0.36), 0, shoulder + 0.36, MZ);                       // head
+        part(new THREE.TorusGeometry(0.56, 0.055, 8, 24),
+             0, shoulder + 0.44, MZ - 0.30, [0.30, 0, 0]);              // halo
+
+        // Arms: right raised with the sword, left lowered holding the scales
+        // of judgement, which is how he is nearly always shown.
+        part(box(0.22, 1.5, 0.22), 0.62, shoulder - 0.32, MZ, [0, 0, -0.42]);
+        part(box(0.22, 1.4, 0.22), -0.60, shoulder - 0.50, MZ, [0, 0, 0.16]);
+
+        // The sword, upright.
+        part(box(0.13, 3.0, 0.13), 1.02, shoulder + 1.05, MZ, [0, 0, -0.08]);
+        part(box(0.62, 0.13, 0.16), 0.95, shoulder - 0.32, MZ);         // crossguard
+        part(box(0.17, 0.30, 0.17), 0.93, shoulder - 0.56, MZ);         // grip
+
+        /* Wings. Flattened tapered solids rather than planes: a wing IS thin,
+         * so a thin box is the honest primitive, and it still has a silhouette
+         * from the side where a plane would vanish. */
+        /* A fan of tapered feathers per side, radiating from one point at the
+         * shoulder and rising above the head. The first attempt was two big
+         * slabs set at an angle, which from the floor of the nave read
+         * unmistakably as a windmill: the giveaway is that real wings radiate
+         * from a single joint and sweep UP, they do not stick out sideways. */
+        for (const s of [-1, 1]) {
+          const sx = s * 0.46, sy = shoulder + 0.12, sz = MZ - 0.40;
+          /* Wide enough to OVERLAP. Feathers 0.46 deep at 18 degrees apart
+           * leave gaps, and a wing with gaps in it is a rake. Overlapping
+           * them merges the fan into one mass that still shows its edges. */
+          const feathers = [
+            [2.30, 0.82, 0.06], [2.65, 0.80, 0.32], [2.80, 0.76, 0.58],
+            [2.60, 0.68, 0.84], [2.15, 0.58, 1.10], [1.60, 0.46, 1.34],
+          ];
+          for (const [len, ht, tilt] of feathers) {
+            const a = s > 0 ? tilt : Math.PI - tilt;
+            part(box(len, ht, 0.12),
+                 sx + Math.cos(a) * len * 0.5,
+                 sy + Math.sin(a) * len * 0.5,
+                 sz, [0, s * 0.20, a]);
+          }
+        }
+      }
+
+      /* -------- the wolf, and the dragon */
+      const BEAST_X = 7.4;
+      {
+        // Wolf, sitting: the Cossack who could turn into one and catch arrows.
+        const H = 1.15;
+        plinth(-BEAST_X, STEP_TOP, MZ + 0.6, 2.0, H);
+        const b = STEP_TOP + H + 0.09;
+        part(ball(0.78), -BEAST_X, b + 0.80, MZ + 0.6, null, [1, 1.15, 0.85]);   // haunches
+        part(box(0.62, 1.5, 0.62), -BEAST_X, b + 1.55, MZ + 0.35);                // chest
+        part(ball(0.44), -BEAST_X, b + 2.42, MZ + 0.28, null, [1, 0.95, 1.15]);   // skull
+        part(box(0.30, 0.30, 0.62), -BEAST_X, b + 2.30, MZ - 0.14);               // muzzle
+        for (const s of [-1, 1]) {
+          part(box(0.20, 0.42, 0.14), -BEAST_X + s * 0.26, b + 2.80, MZ + 0.34,
+               [0, 0, s * 0.18]);                                                 // ears
+          part(box(0.24, 1.1, 0.24), -BEAST_X + s * 0.36, b + 0.72, MZ - 0.10);   // forelegs
+        }
+        part(box(0.26, 0.26, 1.1), -BEAST_X, b + 0.42, MZ + 1.20, [0.5, 0, 0]);   // tail
+      }
+      {
+        // Dragon, couchant with the head raised: rocket artillery, whose fire
+        // is its missiles.
+        const H = 1.15;
+        plinth(BEAST_X, STEP_TOP, MZ + 0.6, 2.0, H);
+        const b = STEP_TOP + H + 0.09;
+        part(ball(0.85), BEAST_X, b + 0.72, MZ + 0.7, null, [1, 0.85, 1.25]);     // coiled body
+        part(box(0.46, 1.7, 0.46), BEAST_X, b + 1.55, MZ + 0.20, [0.30, 0, 0]);   // neck
+        part(box(0.44, 0.40, 0.92), BEAST_X, b + 2.40, MZ - 0.42);                // head
+        part(box(0.20, 0.18, 0.40), BEAST_X, b + 2.34, MZ - 1.02);                // snout
+        for (const s of [-1, 1]) {
+          part(box(0.14, 0.44, 0.14), BEAST_X + s * 0.17, b + 2.74, MZ - 0.26,
+               [0, 0, s * 0.26]);                                                 // horns
+          // Wings, half-furled.
+          for (const [len, tilt] of [[1.55, 0.22], [1.75, 0.52], [1.60, 0.82], [1.25, 1.08]]) {
+            const a = s > 0 ? tilt : Math.PI - tilt;
+            part(box(len, 0.56, 0.11),
+                 BEAST_X + s * 0.38 + Math.cos(a) * len * 0.5,
+                 b + 1.45 + Math.sin(a) * len * 0.5,
+                 MZ + 0.62, [0, s * 0.26, a]);
+          }
+        }
+        part(box(0.24, 0.24, 1.5), BEAST_X, b + 0.44, MZ + 1.55, [0.42, 0, 0]);   // tail
+      }
+
+      /* -------- light falling on each of them */
+      /* A spot from the vault onto every figure, and a matching visible beam.
+       * Two separate things doing two separate jobs: the SpotLight is what
+       * actually lifts the stone out of the dark, the crossed cards are what
+       * you see hanging in the air. Neither alone reads as a shaft of light
+       * landing on a statue. */
+      const statueLights = [];
+      for (const [x, reach] of [[0, 1.30], [-BEAST_X, 1.0], [BEAST_X, 1.0]]) {
+        const sp = new THREE.SpotLight(0xffe9cf, 0, 42, 0.40, 0.92, 1.0);
+        sp.position.set(x * 0.55, 21, MZ + 5.0);
+        sp.target.position.set(x, 2.2, MZ);
+        church.add(sp, sp.target);
+        statueLights.push({ light: sp, reach });
+
+        const from = new THREE.Vector3(x * 0.55, 20.5, MZ + 5.0);
+        const to = new THREE.Vector3(x, 0.6, MZ);
+        const dir = new THREE.Vector3().subVectors(to, from);
+        const len = dir.length();
+        dir.normalize();
+        for (const roll of [0, Math.PI / 2]) {
+          const s = new THREE.Mesh(new THREE.PlaneGeometry(3.4 * reach, 1), shaftMat);
+          s.quaternion.setFromUnitVectors(UP, dir);
+          s.rotateY(roll);
+          s.position.copy(from).addScaledVector(dir, len / 2);
+          s.scale.set(1, len, 1);
+          church.add(s);
+        }
+      }
+
       /* ------------------------------------------------------------ loop */
       const resize = () => {
         const w = mount.clientWidth, h = mount.clientHeight;
@@ -1624,6 +1807,12 @@ function MemorialLight({
         sunLight.color.setRGB(0.42 + d * 0.58, 0.52 + d * 0.42, 0.95 - d * 0.09);
         sunLight.intensity = 0.22 + d * 1.25;
         sunLight.position.copy(uSunDir.value).multiplyScalar(30);
+        /* The statue spots stay lit around the clock — they are what the room
+         * does for its figures, not what the weather does. They lift with the
+         * day so the stone does not go flat at noon, and never drop to nothing
+         * at night, because a spotlit statue in a dark church is the whole
+         * effect. */
+        for (const sl of statueLights) sl.light.intensity = (330 + d * 260) * sl.reach;
         scene.fog.color.copy(sky);
         scene.fog.density = 0.020 - d * 0.007;
 
